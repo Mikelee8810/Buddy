@@ -73,12 +73,12 @@ fun ScribeMainScreen() {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(26.dp),
-                    color = ScribeSurface.copy(alpha = 0.94f),
+                    color = ScribeSurface,
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
-                        Color(0x26FFFFFF)
+                        ScribeOutline
                     ),
-                    shadowElevation = 8.dp
+                    shadowElevation = 10.dp
                 ) {
                     NavigationBar(
                         containerColor = Color.Transparent,
@@ -95,7 +95,7 @@ fun ScribeMainScreen() {
                                     Icon(
                                         screen.icon,
                                         contentDescription = screen.title,
-                                        tint = if (isSelected) ScribeIce else ScribeTextTertiary
+                                        tint = if (isSelected) ScribeCobalt else ScribeTextTertiary
                                     )
                                 },
                                 label = {
@@ -103,7 +103,7 @@ fun ScribeMainScreen() {
                                         text = screen.title,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal,
-                                        color = if (isSelected) ScribeTextPrimary else ScribeTextTertiary
+                                        color = if (isSelected) ScribeCobalt else ScribeTextTertiary
                                     )
                                 },
                                 selected = isSelected,
@@ -116,9 +116,9 @@ fun ScribeMainScreen() {
                                     }
                                 },
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = ScribeIce,
-                                    selectedTextColor = ScribeTextPrimary,
-                                    indicatorColor = ScribeCobalt.copy(alpha = 0.25f),
+                                    selectedIconColor = ScribeCobalt,
+                                    selectedTextColor = ScribeCobalt,
+                                    indicatorColor = ScribeCobalt.copy(alpha = 0.12f),
                                     unselectedIconColor = ScribeTextTertiary,
                                     unselectedTextColor = ScribeTextTertiary
                                 )

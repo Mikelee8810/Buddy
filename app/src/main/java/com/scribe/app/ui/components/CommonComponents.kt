@@ -56,7 +56,7 @@ fun ScribeBrandHeader(
                         .background(ScribeSurfaceVariant)
                         .border(
                             1.dp,
-                            ScribeIce.copy(alpha = 0.35f),
+                            ScribeOutline,
                             RoundedCornerShape(10.dp)
                         ),
                     contentAlignment = Alignment.Center
@@ -111,7 +111,7 @@ fun ScribeCard(
         shape = RoundedCornerShape(18.dp),
         color = backgroundColor,
         border = finalBorder,
-        shadowElevation = 0.dp
+        shadowElevation = 2.dp
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
@@ -180,7 +180,7 @@ fun ScribeButton(
     val bgBrush = if (isSecondary) {
         Brush.linearGradient(listOf(ScribeSurfaceVariant, ScribeSurfaceVariant))
     } else {
-        Brush.linearGradient(listOf(ScribeCobalt, ScribeIce))
+        Brush.linearGradient(listOf(ScribeCobalt, ScribeCobalt))
     }
     val borderStroke = if (isSecondary) BorderStroke(1.dp, ScribeOutline) else null
     val textColor = if (isSecondary) ScribeTextPrimary else Color.White
@@ -256,15 +256,15 @@ fun ScribeLatencyBadge(
 ) {
     val color = when {
         latencyMs < 500 -> ScribeEmerald
-        latencyMs < 1200 -> ScribeIce
+        latencyMs < 1200 -> ScribeCobalt
         else -> ScribeAmber
     }
 
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.15f))
-            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.12f))
+            .border(1.dp, color.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -291,9 +291,9 @@ fun ScribeChip(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
-    val bg = if (isSelected) ScribeCobalt.copy(alpha = 0.25f) else ScribeSurfaceVariant
-    val border = if (isSelected) ScribeIce else ScribeOutline
-    val textColor = if (isSelected) ScribeIce else ScribeTextSecondary
+    val bg = if (isSelected) ScribeCobalt.copy(alpha = 0.12f) else ScribeSurfaceVariant
+    val border = if (isSelected) ScribeCobalt else ScribeOutline
+    val textColor = if (isSelected) ScribeCobalt else ScribeTextSecondary
 
     Box(
         modifier = modifier

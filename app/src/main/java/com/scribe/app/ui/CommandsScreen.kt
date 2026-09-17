@@ -106,8 +106,8 @@ fun CommandsScreen() {
                                 showResetDialog = true
                             },
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = Color(0x26EF4444),
-                                contentColor = ScribeTerracotta
+                                containerColor = ScribeRose.copy(alpha = 0.1f),
+                                contentColor = ScribeRose
                             ),
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
@@ -115,7 +115,7 @@ fun CommandsScreen() {
                             Icon(
                                 imageVector = Icons.Default.RestartAlt,
                                 contentDescription = "Reset Defaults",
-                                tint = ScribeTerracotta,
+                                tint = ScribeRose,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -128,16 +128,16 @@ fun CommandsScreen() {
                                 openSheet()
                             },
                             colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = ScribeCobalt.copy(alpha = 0.2f),
-                                contentColor = ScribeGold
+                                containerColor = ScribeCobalt.copy(alpha = 0.1f),
+                                contentColor = ScribeCobalt
                             ),
                             shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "Add Command",
-                                tint = ScribeGold,
+                                tint = ScribeCobalt,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -174,7 +174,7 @@ fun CommandsScreen() {
             onDismissRequest = { closeSheet() },
             sheetState = sheetState,
             containerColor = ScribeSurface,
-            contentColor = ScribeParchment,
+            contentColor = ScribeTextPrimary,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             dragHandle = {
                 Box(
@@ -201,7 +201,7 @@ fun CommandsScreen() {
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp,
                         letterSpacing = (-0.3).sp,
-                        color = ScribeParchment
+                        color = ScribeTextPrimary
                     )
                 }
 
@@ -211,7 +211,7 @@ fun CommandsScreen() {
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = ScribeParchmentMuted
+                    color = ScribeTextTertiary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -246,7 +246,7 @@ fun CommandsScreen() {
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = ScribeParchmentMuted
+                    color = ScribeTextTertiary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
@@ -255,12 +255,12 @@ fun CommandsScreen() {
                         triggerInput = it
                         errorMessage = null
                     },
-                    placeholder = { Text("e.g. fix, polish, formal", color = ScribeParchmentMuted) },
+                    placeholder = { Text("e.g. fix, polish, formal", color = ScribeTextTertiary) },
                     prefix = {
                         Text(
                             currentPrefix,
                             fontWeight = FontWeight.Bold,
-                            color = ScribeGold,
+                            color = ScribeCobalt,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 16.sp
                         )
@@ -269,12 +269,13 @@ fun CommandsScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ScribeGold,
+                        focusedBorderColor = ScribeCobalt,
                         unfocusedBorderColor = ScribeOutline,
                         focusedContainerColor = ScribeSurfaceVariant,
                         unfocusedContainerColor = ScribeSurfaceVariant,
-                        focusedTextColor = ScribeParchment,
-                        unfocusedTextColor = ScribeParchment
+                        focusedTextColor = ScribeTextPrimary,
+                        unfocusedTextColor = ScribeTextPrimary,
+                        cursorColor = ScribeCobalt
                     )
                 )
 
@@ -286,7 +287,7 @@ fun CommandsScreen() {
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
-                    color = ScribeParchmentMuted
+                    color = ScribeTextTertiary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
@@ -299,7 +300,7 @@ fun CommandsScreen() {
                         Text(
                             if (isTextReplacer) "Text to automatically replace the trigger with..."
                             else "Instructions for how the AI should rewrite the text...",
-                            color = ScribeParchmentMuted
+                            color = ScribeTextTertiary
                         )
                     },
                     minLines = 3,
@@ -307,12 +308,13 @@ fun CommandsScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ScribeGold,
+                        focusedBorderColor = ScribeCobalt,
                         unfocusedBorderColor = ScribeOutline,
                         focusedContainerColor = ScribeSurfaceVariant,
                         unfocusedContainerColor = ScribeSurfaceVariant,
-                        focusedTextColor = ScribeParchment,
-                        unfocusedTextColor = ScribeParchment
+                        focusedTextColor = ScribeTextPrimary,
+                        unfocusedTextColor = ScribeTextPrimary,
+                        cursorColor = ScribeCobalt
                     )
                 )
 
@@ -320,7 +322,7 @@ fun CommandsScreen() {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = errorMessage!!,
-                        color = ScribeTerracotta,
+                        color = ScribeRose,
                         fontSize = 12.sp
                     )
                 }
@@ -340,7 +342,7 @@ fun CommandsScreen() {
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, ScribeOutline),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = ScribeParchment
+                            contentColor = ScribeTextPrimary
                         )
                     ) {
                         Text("Cancel", fontWeight = FontWeight.SemiBold)
@@ -393,10 +395,10 @@ fun CommandsScreen() {
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ScribeGold,
-                            contentColor = ScribeBackground,
+                            containerColor = ScribeCobalt,
+                            contentColor = Color.White,
                             disabledContainerColor = ScribeSurfaceVariant,
-                            disabledContentColor = ScribeParchmentDim
+                            disabledContentColor = ScribeTextTertiary
                         )
                     ) {
                         Text(
@@ -475,7 +477,7 @@ private fun CommandCard(
                     text = if (cmd.isBuiltIn) "Delete Default Shortcut?" else "Delete Shortcut?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = ScribeParchment
+                    color = ScribeTextPrimary
                 )
             },
             text = {
@@ -485,7 +487,7 @@ private fun CommandCard(
                     else
                         "Are you sure you want to delete \"${cmd.trigger}\"? This action cannot be undone.",
                     fontSize = 13.sp,
-                    color = ScribeParchmentMuted,
+                    color = ScribeTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -495,7 +497,7 @@ private fun CommandCard(
                         showDeleteDialog = false
                         onDelete()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ScribeTerracotta, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = ScribeRose, contentColor = Color.White),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Delete", fontWeight = FontWeight.Bold)
@@ -504,7 +506,7 @@ private fun CommandCard(
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeParchmentMuted)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextSecondary)
                 ) {
                     Text("Cancel")
                 }
@@ -529,7 +531,7 @@ private fun CommandCard(
             },
         border = BorderStroke(
             1.dp,
-            if (isExpanded) ScribeIce.copy(alpha = 0.5f) else ScribeOutline
+            if (isExpanded) ScribeCobalt.copy(alpha = 0.4f) else ScribeOutline
         ),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
     ) {
@@ -543,8 +545,8 @@ private fun CommandCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isExpanded) ScribeOutline else ScribeSurfaceVariant)
-                        .border(1.dp, if (isExpanded) ScribeGold else ScribeOutline, RoundedCornerShape(8.dp))
+                        .background(if (isExpanded) ScribeCobalt.copy(alpha = 0.12f) else ScribeSurfaceVariant)
+                        .border(1.dp, if (isExpanded) ScribeCobalt else ScribeOutline, RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
                     Text(
@@ -552,7 +554,7 @@ private fun CommandCard(
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = ScribeGold
+                        color = if (isExpanded) ScribeCobalt else ScribeTextPrimary
                     )
                 }
 
@@ -568,7 +570,7 @@ private fun CommandCard(
                             Icon(
                                 Icons.Default.Edit,
                                 contentDescription = "Edit",
-                                tint = ScribeParchmentMuted,
+                                tint = ScribeTextTertiary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -580,7 +582,7 @@ private fun CommandCard(
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete",
-                            tint = ScribeTerracotta.copy(alpha = 0.8f),
+                            tint = ScribeRose,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -591,7 +593,7 @@ private fun CommandCard(
                         Icon(
                             imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = if (isExpanded) "Collapse" else "Expand",
-                            tint = if (isExpanded) ScribeGold else ScribeParchmentDim,
+                            tint = if (isExpanded) ScribeCobalt else ScribeTextTertiary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -611,7 +613,7 @@ private fun CommandCard(
                     Text(
                         text = cmd.prompt,
                         fontSize = 13.sp,
-                        color = ScribeParchmentMuted,
+                        color = ScribeTextSecondary,
                         lineHeight = 19.sp
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -624,18 +626,18 @@ private fun CommandCard(
                             when {
                                 cmd.isBuiltIn -> TypeBadge(
                                     label = "Built-in",
-                                    containerColor = Color(0x2610B981),
-                                    contentColor = ScribeSage
+                                    containerColor = ScribeEmerald.copy(alpha = 0.12f),
+                                    contentColor = ScribeEmerald
                                 )
                                 cmd.isTextReplacer -> TypeBadge(
                                     label = "Text Snippet",
-                                    containerColor = Color(0x26F59E0B),
+                                    containerColor = ScribeAmber.copy(alpha = 0.12f),
                                     contentColor = ScribeAmber
                                 )
                                 else -> TypeBadge(
                                     label = "AI Prompt",
-                                    containerColor = ScribeCobalt.copy(alpha = 0.2f),
-                                    contentColor = ScribeGold
+                                    containerColor = ScribeCobalt.copy(alpha = 0.12f),
+                                    contentColor = ScribeCobalt
                                 )
                             }
                         }
@@ -649,13 +651,13 @@ private fun CommandCard(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 android.widget.Toast.makeText(context, "Prompt copied!", android.widget.Toast.LENGTH_SHORT).show()
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
                                 Icons.Default.ContentCopy,
                                 contentDescription = "Copy Prompt",
-                                tint = ScribeParchmentDim,
-                                modifier = Modifier.size(15.dp)
+                                tint = ScribeCobalt,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -693,9 +695,9 @@ private fun TypeSelectChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bgColor = if (selected) ScribeCobalt.copy(alpha = 0.2f) else ScribeSurfaceVariant
-    val borderColor = if (selected) ScribeGold else ScribeOutline
-    val textColor = if (selected) ScribeGold else ScribeParchmentMuted
+    val bgColor = if (selected) ScribeCobalt.copy(alpha = 0.1f) else ScribeSurfaceVariant
+    val borderColor = if (selected) ScribeCobalt else ScribeOutline
+    val textColor = if (selected) ScribeCobalt else ScribeTextSecondary
 
     Box(
         modifier = modifier

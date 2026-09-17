@@ -182,7 +182,7 @@ fun DashboardScreen() {
         ScribeCard(
             border = BorderStroke(
                 1.dp,
-                if (isServiceEnabled) Color(0x3310B981) else Color(0x4DF59E0B)
+                if (isServiceEnabled) ScribeEmerald.copy(alpha = 0.3f) else ScribeAmber.copy(alpha = 0.3f)
             ),
             backgroundColor = ScribeSurface,
             contentPadding = PaddingValues(20.dp)
@@ -200,7 +200,7 @@ fun DashboardScreen() {
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isServiceEnabled) Color(0x1F10B981) else Color(0x1FF59E0B)),
+                            .background(if (isServiceEnabled) ScribeEmerald.copy(alpha = 0.12f) else ScribeAmber.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -259,7 +259,7 @@ fun DashboardScreen() {
                     Icon(
                         imageVector = Icons.Outlined.Psychology,
                         contentDescription = null,
-                        tint = ScribeCyan,
+                        tint = ScribeCobalt,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
@@ -293,7 +293,7 @@ fun DashboardScreen() {
 
         // ── 2. BENTO TILE: Live In-App Test Scratchpad ────────────────────────────────
         ScribeCard(
-            border = BorderStroke(1.dp, Brush.linearGradient(listOf(ScribeCobalt.copy(alpha = 0.4f), ScribeIce.copy(alpha = 0.2f)))),
+            border = BorderStroke(1.dp, ScribeOutline),
             backgroundColor = ScribeSurface,
             contentPadding = PaddingValues(20.dp)
         ) {
@@ -310,13 +310,13 @@ fun DashboardScreen() {
                         modifier = Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(ScribeCobalt.copy(alpha = 0.2f)),
+                            .background(ScribeCobalt.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Science,
                             contentDescription = null,
-                            tint = ScribeGold,
+                            tint = ScribeCobalt,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -325,7 +325,7 @@ fun DashboardScreen() {
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
-                        color = ScribeParchmentMuted
+                        color = ScribeTextTertiary
                     )
                 }
 
@@ -351,13 +351,13 @@ fun DashboardScreen() {
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ScribeIndigo,
+                    focusedBorderColor = ScribeCobalt,
                     unfocusedBorderColor = ScribeOutline,
                     focusedContainerColor = ScribeSurfaceVariant,
                     unfocusedContainerColor = ScribeSurfaceVariant,
                     focusedTextColor = ScribeTextPrimary,
                     unfocusedTextColor = ScribeTextPrimary,
-                    cursorColor = ScribeCyan
+                    cursorColor = ScribeCobalt
                 ),
                 shape = RoundedCornerShape(14.dp)
             )
@@ -479,8 +479,8 @@ fun DashboardScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0x2E10B981))
-                                .border(1.dp, Color(0x4D10B981), RoundedCornerShape(12.dp))
+                                .background(ScribeEmerald.copy(alpha = 0.08f))
+                                .border(1.dp, ScribeEmerald.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                                 .padding(14.dp)
                         ) {
                             Column {
@@ -528,8 +528,8 @@ fun DashboardScreen() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0x2EF43F5E))
-                                .border(1.dp, Color(0x4DF43F5E), RoundedCornerShape(12.dp))
+                                .background(ScribeRose.copy(alpha = 0.08f))
+                                .border(1.dp, ScribeRose.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
                                 .padding(14.dp)
                         ) {
                             Text(
@@ -570,7 +570,7 @@ fun DashboardScreen() {
                     Icon(
                         imageVector = Icons.Outlined.Key,
                         contentDescription = null,
-                        tint = ScribeIndigo,
+                        tint = ScribeCobalt,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -609,7 +609,7 @@ fun DashboardScreen() {
                     Icon(
                         imageVector = Icons.Outlined.Terminal,
                         contentDescription = null,
-                        tint = ScribeCyan,
+                        tint = ScribeCobalt,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -634,7 +634,7 @@ fun DashboardScreen() {
 
         // ── 4. BENTO TILE: Security & Privacy Isolation ──────────────────────────────
         ScribeCard(
-            border = BorderStroke(1.dp, Color(0x2E10B981)),
+            border = BorderStroke(1.dp, ScribeEmerald.copy(alpha = 0.25f)),
             contentPadding = PaddingValues(16.dp)
         ) {
             Row(
@@ -645,7 +645,7 @@ fun DashboardScreen() {
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0x1F10B981)),
+                        .background(ScribeEmerald.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -712,8 +712,8 @@ fun DashboardScreen() {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (selectedCommandTrigger == cmd) ScribeCobalt.copy(alpha = 0.25f) else ScribeSurfaceVariant)
-                            .border(1.dp, if (selectedCommandTrigger == cmd) ScribeGold else ScribeOutline, RoundedCornerShape(8.dp))
+                            .background(if (selectedCommandTrigger == cmd) ScribeCobalt.copy(alpha = 0.12f) else ScribeSurfaceVariant)
+                            .border(1.dp, if (selectedCommandTrigger == cmd) ScribeCobalt else ScribeOutline, RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
@@ -721,13 +721,13 @@ fun DashboardScreen() {
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Monospace,
-                            color = if (selectedCommandTrigger == cmd) ScribeGold else ScribeParchmentMuted
+                            color = if (selectedCommandTrigger == cmd) ScribeCobalt else ScribeTextPrimary
                         )
                     }
                     Text(
                         text = desc,
                         fontSize = 12.sp,
-                        color = ScribeParchmentMuted,
+                        color = ScribeTextSecondary,
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1f).padding(start = 12.dp)
                     )

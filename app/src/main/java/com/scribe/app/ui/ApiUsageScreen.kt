@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import com.scribe.app.manager.KeyManager
 import com.scribe.app.manager.UsageManager
 import com.scribe.app.ui.components.SlateCard
+import com.scribe.app.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -186,8 +187,8 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF1E2A23), // subtle green tint
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2E4035))
+                    color = ScribeEmerald.copy(alpha = 0.08f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ScribeEmerald.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp)
@@ -195,7 +196,7 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                         Icon(
                             imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = "Success",
-                            tint = Color(0xFF4CAF50),
+                            tint = ScribeEmerald,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -203,12 +204,12 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                             text = "${stats.successfulRequests}",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = ScribeTextPrimary
                         )
                         Text(
                             text = "Successful",
                             fontSize = 13.sp,
-                            color = Color(0xFFA5D6A7)
+                            color = ScribeEmerald
                         )
                     }
                 }
@@ -217,8 +218,8 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF331E1E), // subtle red tint
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF4D2D2D))
+                    color = ScribeRose.copy(alpha = 0.08f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ScribeRose.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp)
@@ -226,7 +227,7 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                         Icon(
                             imageVector = Icons.Rounded.Error,
                             contentDescription = "Errors",
-                            tint = Color(0xFFF44336),
+                            tint = ScribeRose,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -234,12 +235,12 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
                             text = "${stats.failedRequests}",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = ScribeTextPrimary
                         )
                         Text(
                             text = "Failed",
                             fontSize = 13.sp,
-                            color = Color(0xFFEF9A9A)
+                            color = ScribeRose
                         )
                     }
                 }

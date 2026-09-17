@@ -201,9 +201,9 @@ fun SettingsScreen(navController: NavController? = null) {
                         }
                         ScribeChip(
                             text = providerType.uppercase(),
-                            containerColor = ScribeCobalt.copy(alpha = 0.2f),
-                            contentColor = ScribeIce,
-                            borderColor = ScribeIce.copy(alpha = 0.35f)
+                            containerColor = ScribeCobalt.copy(alpha = 0.1f),
+                            contentColor = ScribeCobalt,
+                            borderColor = ScribeCobalt.copy(alpha = 0.25f)
                         )
                     }
 
@@ -241,14 +241,14 @@ fun SettingsScreen(navController: NavController? = null) {
                                 },
                                 enabled = !isPinging,
                                 colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = ScribeIce.copy(alpha = 0.15f),
-                                    contentColor = ScribeIce
+                                    containerColor = ScribeCobalt.copy(alpha = 0.1f),
+                                    contentColor = ScribeCobalt
                                 ),
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 if (isPinging) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = ScribeIce)
+                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = ScribeCobalt)
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text("Testing...", fontSize = 12.sp)
                                 } else {
@@ -751,7 +751,7 @@ fun SettingsScreen(navController: NavController? = null) {
             },
             sheetState = sheetState,
             containerColor = ScribeSurface,
-            contentColor = ScribeParchment,
+            contentColor = ScribeTextPrimary,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             dragHandle = { BottomSheetDefaults.DragHandle(color = ScribeOutline) }
         ) {
@@ -761,9 +761,9 @@ fun SettingsScreen(navController: NavController? = null) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
             ) {
-                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeParchment)
+                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeTextPrimary)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeParchmentMuted)
+                Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeTextSecondary)
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -778,12 +778,12 @@ fun SettingsScreen(navController: NavController? = null) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ScribeGold,
+                        focusedBorderColor = ScribeCobalt,
                         unfocusedBorderColor = ScribeOutline,
                         focusedContainerColor = ScribeSurfaceVariant,
                         unfocusedContainerColor = ScribeSurfaceVariant,
-                        focusedTextColor = ScribeParchment,
-                        unfocusedTextColor = ScribeParchment
+                        focusedTextColor = ScribeTextPrimary,
+                        unfocusedTextColor = ScribeTextPrimary
                     )
                 )
 
@@ -791,7 +791,7 @@ fun SettingsScreen(navController: NavController? = null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = msg,
-                        color = if (msg.startsWith("Valid")) ScribeSage else ScribeTerracotta,
+                        color = if (msg.startsWith("Valid")) ScribeEmerald else ScribeRose,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -812,7 +812,7 @@ fun SettingsScreen(navController: NavController? = null) {
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, ScribeOutline),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ScribeParchment)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ScribeTextPrimary)
                     ) {
                         Text("Cancel")
                     }
@@ -855,10 +855,10 @@ fun SettingsScreen(navController: NavController? = null) {
                         enabled = newKeyText.isNotBlank() && !isTestingKey,
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ScribeCobalt, contentColor = ScribeBackground)
+                        colors = ButtonDefaults.buttonColors(containerColor = ScribeCobalt, contentColor = Color.White)
                     ) {
                         if (isTestingKey) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = ScribeBackground)
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Verifying...")
                         } else {
@@ -1009,8 +1009,8 @@ private fun WarmProviderCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val containerColor = if (selected) ScribeCobalt.copy(alpha = 0.18f) else ScribeSurfaceVariant
-    val borderColor = if (selected) ScribeIce else ScribeOutline
+    val containerColor = if (selected) ScribeCobalt.copy(alpha = 0.06f) else ScribeSurface
+    val borderColor = if (selected) ScribeCobalt else ScribeOutline
 
     Box(
         modifier = modifier
@@ -1030,17 +1030,17 @@ private fun WarmProviderCard(
                     text = title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = if (selected) ScribeTextPrimary else ScribeTextSecondary
+                    color = if (selected) ScribeCobalt else ScribeTextPrimary
                 )
                 if (selected) {
                     Box(
                         modifier = Modifier
                             .size(16.dp)
                             .clip(CircleShape)
-                            .background(ScribeIce),
+                            .background(ScribeCobalt),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = ScribeBackground, modifier = Modifier.size(11.dp))
+                        Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
                     }
                 }
             }
@@ -1071,7 +1071,7 @@ private fun WarmDropdown(
             modifier = Modifier.menuAnchor().fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = ScribeIce,
+                focusedBorderColor = ScribeCobalt,
                 unfocusedBorderColor = ScribeOutline,
                 focusedContainerColor = ScribeSurfaceVariant,
                 unfocusedContainerColor = ScribeSurfaceVariant,
@@ -1089,7 +1089,7 @@ private fun WarmDropdown(
                     text = {
                         Text(
                             text = option,
-                            color = if (option == selectedOption) ScribeIce else ScribeTextPrimary,
+                            color = if (option == selectedOption) ScribeCobalt else ScribeTextPrimary,
                             fontWeight = if (option == selectedOption) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 13.sp
                         )
@@ -1140,13 +1140,13 @@ private fun UnifiedKeyRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    ScribePulsePip(color = ScribeSage)
+                    ScribePulsePip(color = ScribeEmerald)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "$providerName Slot #${index + 1}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = ScribeParchment
+                        color = ScribeTextPrimary
                     )
                 }
                 Spacer(modifier = Modifier.height(2.dp))
@@ -1154,7 +1154,7 @@ private fun UnifiedKeyRow(
                     text = maskedKey,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 12.sp,
-                    color = ScribeParchmentMuted
+                    color = ScribeTextSecondary
                 )
             }
 
@@ -1168,21 +1168,21 @@ private fun UnifiedKeyRow(
                     },
                     modifier = Modifier.size(34.dp)
                 ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = ScribeParchmentMuted, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = ScribeTextTertiary, modifier = Modifier.size(16.dp))
                 }
 
                 IconButton(
                     onClick = onUsageClick,
                     modifier = Modifier.size(34.dp)
                 ) {
-                    Icon(Icons.Outlined.BarChart, contentDescription = "Usage", tint = ScribeGold, modifier = Modifier.size(17.dp))
+                    Icon(Icons.Outlined.BarChart, contentDescription = "Usage", tint = ScribeCobalt, modifier = Modifier.size(17.dp))
                 }
 
                 IconButton(
                     onClick = onDelete,
                     modifier = Modifier.size(34.dp)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ScribeTerracotta, modifier = Modifier.size(17.dp))
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ScribeRose, modifier = Modifier.size(17.dp))
                 }
             }
         }
@@ -1194,14 +1194,14 @@ private fun WarmLinkChip(label: String, url: String, uriHandler: UriHandler) {
     Surface(
         onClick = { uriHandler.openUri(url) },
         shape = RoundedCornerShape(8.dp),
-        color = ScribeCobalt.copy(alpha = 0.2f),
-        border = BorderStroke(1.dp, ScribeOutline)
+        color = ScribeCobalt.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, ScribeCobalt.copy(alpha = 0.2f))
     ) {
         Text(
             text = "$label ↗",
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            color = ScribeGold,
+            color = ScribeCobalt,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }

@@ -57,8 +57,8 @@ fun HistoryScreen() {
                             showClearDialog = true
                         },
                         colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0x1FF87171),
-                            contentColor = Color(0xFFF87171)
+                            containerColor = ScribeRose.copy(alpha = 0.1f),
+                            contentColor = ScribeRose
                         ),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -66,7 +66,7 @@ fun HistoryScreen() {
                         Icon(
                             imageVector = Icons.Default.DeleteSweep,
                             contentDescription = "Clear History",
-                            tint = Color(0xFFF87171),
+                            tint = ScribeRose,
                             modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -104,7 +104,7 @@ fun HistoryScreen() {
                             showClearDialog = false
                         }
                     ) {
-                        Text("Clear", color = Color(0xFFF87171), fontWeight = FontWeight.Bold)
+                        Text("Clear", color = ScribeRose, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
@@ -181,8 +181,8 @@ fun HistoryScreen() {
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0x26E5A93C))
-                                            .border(1.dp, Color(0x4DE5A93C), RoundedCornerShape(6.dp))
+                                            .background(ScribeCobalt.copy(alpha = 0.1f))
+                                            .border(1.dp, ScribeCobalt.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
                                             .padding(horizontal = 8.dp, vertical = 3.dp)
                                     ) {
                                         Text(
@@ -190,7 +190,7 @@ fun HistoryScreen() {
                                             fontFamily = FontFamily.Monospace,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = ScribeGold
+                                            color = ScribeCobalt
                                         )
                                     }
 
@@ -203,7 +203,7 @@ fun HistoryScreen() {
                                         text = timeAgo.toString(),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = ScribeParchmentMuted
+                                        color = ScribeTextSecondary
                                     )
                                 }
 
@@ -242,8 +242,8 @@ fun HistoryScreen() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0x1AE5A93C))
-                                        .border(1.dp, Color(0x33E5A93C), RoundedCornerShape(10.dp))
+                                        .background(ScribeEmerald.copy(alpha = 0.08f))
+                                        .border(1.dp, ScribeEmerald.copy(alpha = 0.2f), RoundedCornerShape(10.dp))
                                         .padding(10.dp)
                                 ) {
                                     Text(
@@ -251,31 +251,30 @@ fun HistoryScreen() {
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 0.8.sp,
-                                        color = ScribeGold
+                                        color = ScribeEmerald
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = item.newText,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = ScribeTextPrimary,
-                                        maxLines = 4,
-                                        overflow = TextOverflow.Ellipsis
+                                        color = ScribeTextPrimary
                                     )
                                 }
                             }
 
+                            // Delete individual item button
                             IconButton(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     historyManager.deleteItem(item.id)
                                     historyItems = historyManager.getHistory()
                                 },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete item",
+                                    contentDescription = "Delete entry",
                                     tint = ScribeTextTertiary,
                                     modifier = Modifier.size(16.dp)
                                 )
