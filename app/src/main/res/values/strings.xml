@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Buddy</string>
-    <string name="accessibility_service_label">Buddy Assistant</string>
-    <string name="accessibility_service_desc">Provides system-wide AI text replacements using Gemini when trigger commands are typed.</string>
+    <string name="app_name">Scribe</string>
+    <string name="accessibility_service_label">Scribe Assistant</string>
+    <string name="accessibility_service_desc">Provides system-wide AI text replacements using OpenRouter, Gemini, and Groq when trigger commands are typed.</string>
 </resources>

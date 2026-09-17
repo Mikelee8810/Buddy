@@ -1,2 +1,2 @@
 -keep class com.chaquo.python.** { *; }
--keep class com.musheer360.Buddy.api.PythonBridge { *; }
+-keep class com.scribe.app.api.PythonBridge { *; }

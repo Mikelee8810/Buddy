@@ -1,7 +1,7 @@
-# Buddy (Python Edition) — Build Guide
+# Scribe (Python Edition) — Build Guide
 
 ## What this is
-Identical to the original Buddy app — same UI, same features, same Kotlin Accessibility
+Identical to the original Scribe app — same UI, same features, same Kotlin Accessibility
 Service — but with **Python handling all AI calls** via Chaquopy (Python embedded in the APK).
 No Termux. No server. One APK, install and go.
 
@@ -36,7 +36,7 @@ Install with default settings. When it asks to install the Android SDK, say Yes.
 
 1. Open Android Studio
 2. Click **"Open"** (not "New Project")
-3. Browse to this folder (`BuddyPy`) and click **OK**
+3. Browse to this folder (`ScribePy`) and click **OK**
 4. Wait for Gradle sync to finish (first time downloads ~500 MB — just wait)
 
 ---
@@ -66,7 +66,7 @@ Android Studio will:
 
 1. In the app, tap **"Keys"** → paste your Gemini API key
    - Get a free key at: https://aistudio.google.com/app/apikey
-2. Tap **"Dashboard"** → tap **"Enable"** → find **"Buddy Assistant"** → toggle ON
+2. Tap **"Dashboard"** → tap **"Enable"** → find **"Scribe Assistant"** → toggle ON
 3. Done. Open any app and type `?fix` at the end of any text.
 
 ---
@@ -91,18 +91,18 @@ Android Studio will:
 ## Project file overview
 
 ```
-BuddyPy/
+ScribePy/
 ├── app/src/main/
 │   ├── python/
 │   │   ├── gemini_client.py       ← Python: Gemini API
 │   │   └── openai_client.py       ← Python: OpenAI-compatible API
-│   └── java/com/musheer360/Buddy/
+│   └── java/com/scribe/Scribe/
 │       ├── api/PythonBridge.kt    ← Kotlin↔Python bridge (Chaquopy)
 │       ├── service/AssistantService.kt  ← Accessibility Service
 │       ├── manager/KeyManager.kt        ← AES-256 key storage
 │       ├── manager/CommandManager.kt    ← Trigger management
 │       ├── ui/ (4 screens)              ← Identical to original
-│       └── BuddyApp.kt             ← Starts Python on app launch
+│       └── ScribeApp.kt             ← Starts Python on app launch
 ├── build.gradle.kts               ← Chaquopy plugin here
 └── settings.gradle.kts            ← Chaquopy Maven repo here
 ```
@@ -114,7 +114,7 @@ BuddyPy/
 | Problem | Fix |
 |---------|-----|
 | Gradle sync fails with "Chaquopy not found" | Check internet connection; Chaquopy downloads on first sync |
-| "Python not started" crash | Make sure BuddyApp is listed in AndroidManifest.xml `android:name=".BuddyApp"` |
+| "Python not started" crash | Make sure ScribeApp is listed in AndroidManifest.xml `android:name=".ScribeApp"` |
 | APK installs but AI doesn't work | Check your Gemini API key in the Keys tab |
 | Accessibility service not listed | Reinstall the app, then check Settings → Accessibility |
 | Build error about ABI filters | Open app/build.gradle.kts, remove `x86_64` from abiFilters if not needed |

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Left Tine of Scribe Nib -->
+    <path
+        android:pathData="M52.5,23 L35,53 C33,56.5 35,62 37.5,69 L41,79 C42,81.5 45,82.5 47.5,81.5 L52.5,79.5 L52.5,56 C50.5,55 49,53 49,50.5 C49,47.5 51,45.5 52.5,45 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Right Tine of Scribe Nib -->
+    <path
+        android:pathData="M55.5,23 L55.5,45 C57,45.5 59,47.5 59,50.5 C59,53 57.5,55 55.5,56 L55.5,79.5 L60.5,81.5 C63,82.5 66,81.5 67,79 L70.5,69 C73,62 75,56.5 73,53 L55.5,23 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Center Nib Collar Ring Accent -->
+    <path
+        android:pathData="M42.5,72 L65.5,72 C66.5,72 67,73 66.5,74 L65,77 C64.5,78 63.5,78.5 62.5,78.5 L45.5,78.5 C44.5,78.5 43.5,78 43,77 L41.5,74 C41,73 41.5,72 42.5,72 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- AI Primary Spark (Top Right) -->
+    <path
+        android:pathData="M78,21 C78,25 81,28 85,28 C81,28 78,31 78,35 C78,31 75,28 71,28 C75,28 78,25 78,21 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- AI Secondary Spark (Bottom Left Accent) -->
+    <path
+        android:pathData="M29,66 C29,68.5 31,70.5 33.5,70.5 C31,70.5 29,72.5 29,75 C29,72.5 27,70.5 24.5,70.5 C27,70.5 29,68.5 29,66 Z"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Micro Starlet (Center Breather Glow) -->
+    <path
+        android:pathData="M54,49 C54,50 54.5,50.5 55.5,50.5 C54.5,50.5 54,51 54,52 C54,51 53.5,50.5 52.5,50.5 C53.5,50.5 54,50 54,49 Z"
+        android:fillColor="#FFFFFF" />
+
+</vector>

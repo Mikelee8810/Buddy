@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="logo.png" width="160" alt="Buddy App Logo" style="border-radius: 22px;" />
+<img src="logo.png" width="160" alt="Scribe App Logo" style="border-radius: 22px;" />
 
 <br/>
 <br/>
 
-# Buddy — AI Text Assistant
+# Scribe — Universal AI Text Assistant
 
 **The smartest keyboard upgrade you never had to install.**  
 A native Android Accessibility Service that injects AI directly into *any* text field — in *any* app — on the fly.
@@ -31,7 +31,7 @@ A native Android Accessibility Service that injects AI directly into *any* text 
 
 <br/>
 
-[⬇️ Download APK](#download) &nbsp;•&nbsp; [🐛 Report Bug](https://github.com/Musheer360/Buddy/issues) &nbsp;•&nbsp; [✨ Request Feature](https://github.com/Musheer360/Buddy/issues/new) &nbsp;•&nbsp; [🔨 Build from Source](#building-from-source)
+[⬇️ Download APK](#download) &nbsp;•&nbsp; [🐛 Report Bug](https://github.com/Mikelee8810/Scribe/issues) &nbsp;•&nbsp; [✨ Request Feature](https://github.com/Mikelee8810/Scribe/issues/new) &nbsp;•&nbsp; [🔨 Build from Source](#building-from-source)
 
 </div>
 
@@ -39,7 +39,7 @@ A native Android Accessibility Service that injects AI directly into *any* text 
 
 ## 📖 Table of Contents
 
-- [What is Buddy?](#what-is-buddy)
+- [What is Scribe?](#what-is-scribe)
 - [How it Works — Flowchart](#how-it-works)
 - [APK Info & Download](#download)
 - [Getting Started](#getting-started)
@@ -57,11 +57,11 @@ A native Android Accessibility Service that injects AI directly into *any* text 
 
 ---
 
-## 💡 What is Buddy?
+## 💡 What is Scribe?
 
-Buddy is a **zero-UI, zero-friction AI text companion** for Android. It lives quietly in the background as an Accessibility Service and springs to action exactly when you need it — without ever leaving your current app.
+Scribe is a **zero-UI, zero-friction AI text companion** for Android. It lives quietly in the background as an Accessibility Service and springs to action exactly when you need it — without ever leaving your current app.
 
-Finished typing a WhatsApp message but want it to sound more professional? Type `/formal` at the end. Wrote a rough email draft? Append `/improve`. Need a quick reply to that message? Type `/reply`. Buddy intercepts the text, sends it to your configured AI (Gemini, Groq, OpenAI, or any OpenAI-compatible endpoint), and **replaces it inline** — in under 2 seconds.
+Finished typing a WhatsApp message but want it to sound more professional? Type `/formal` at the end. Wrote a rough email draft? Append `/improve`. Need a quick reply to that message? Type `/reply`. Scribe intercepts the text, sends it to your configured AI (Gemini, Groq, OpenAI, or any OpenAI-compatible endpoint), and **replaces it inline** — in under 2 seconds.
 
 No copy-paste. No app-switching. No ChatGPT tab. Just type and trigger.
 
@@ -110,7 +110,7 @@ flowchart TD
 sequenceDiagram
     participant U as 👤 User
     participant A as 📱 Any App
-    participant S as 🤖 Buddy Service
+    participant S as 🤖 Scribe Service
     participant P as 🐍 Python (Chaquopy)
     participant AI as ☁️ AI Provider
 
@@ -146,7 +146,7 @@ sequenceDiagram
   - Key cards are now cleaner and more compact, showing *"Provider Name Key #"* (e.g., `Gemini Key 1`) instead of the masked key string with badge chips.
   - The **Save Key** button is now taller (`48 dp`) with a rounded `12 dp` corner radius for a more polished look.
 - **Redesigned Commands Screen:** The Commands tab received an extensive visual overhaul for a more intuitive and modern browsing experience.
-- **About Section in Settings:** A new **"About"** section with a tappable *"Support Buddy"* card links directly to the GitHub repository — a quick one-tap way to star the project.
+- **About Section in Settings:** A new **"About"** section with a tappable *"Support Scribe"* card links directly to the GitHub repository — a quick one-tap way to star the project.
 
 ### ✨ Prior Release (v1.3)
 - **Groq API Support:** Complete integration for Groq as a first-class AI provider, bringing lightning-fast inferences. Supported models include:
@@ -166,13 +166,13 @@ sequenceDiagram
 - **History Tab:** Keep track of every AI generation and text replacement locally. Easily copy, review, or clear your past outputs directly from the new bottom navigation bar.
 - **Static Text Replacers:** Create custom commands that instantly expand to normal static text (e.g. typing `/address` to output your home address) completely bypassing the AI for zero delays!
 - **In-App Updater:** The Dashboard now shows a compact GitHub button in the top-right corner — tap to star the repo when up to date, or get a direct link to the latest release when an update is available.
-- **Banking App Quick-Toggle:** A new informational card on the Dashboard clearly explains that banking apps block Accessibility Services. A one-tap **"Turn Off"** button takes you directly to the Accessibility Settings to disable Buddy before opening sensitive apps.
+- **Banking App Quick-Toggle:** A new informational card on the Dashboard clearly explains that banking apps block Accessibility Services. A one-tap **"Turn Off"** button takes you directly to the Accessibility Settings to disable Scribe before opening sensitive apps.
 - **Enhanced UI:** Added explicit numbered indexing for your encrypted API Keys, plus completely interactive redirect links seamlessly letting you generate Gemini and OpenAI keys directly from the browser.
 - **Strict Language Preservation:** Completely eradicated auto-translation side-effects. You can seamlessly type casually in Hinglish (or any specific alphabet) and the AI will critically preserve your alphabet structure returning strict Hinglish rather than breaking into Devanagari.
 
-> ℹ️ **Why ~20 MB?** Buddy bundles the full **Python 3.12 interpreter** via [Chaquopy](https://chaquo.com/chaquopy/) to handle AI API calls natively inside the APK — no Termux, no server, no extra installs needed.
+> ℹ️ **Why ~20 MB?** Scribe bundles the full **Python 3.12 interpreter** via [Chaquopy](https://chaquo.com/chaquopy/) to handle AI API calls natively inside the APK — no Termux, no server, no extra installs needed.
 
-➡️ **[Download the latest APK from Releases →](https://github.com/Musheer360/Buddy/releases/latest)**
+➡️ **[Download the latest APK from Releases →](https://github.com/Mikelee8810/Scribe/releases/latest)**
 
 ---
 
@@ -182,14 +182,14 @@ Follow these 5 simple steps to go from zero to AI-powered in under 5 minutes.
 
 ### Step 1 — Install the APK
 
-1. Download the APK from the [Releases page](https://github.com/Musheer360/Buddy/releases/latest)
+1. Download the APK from the [Releases page](https://github.com/Mikelee8810/Scribe/releases/latest)
 2. On your Android phone, open the downloaded `.apk` file
 3. If prompted, allow **"Install from unknown sources"** for your file manager
 4. Tap **Install**
 
 ### Step 2 — Get a Free API Key
 
-Buddy works with **Google Gemini** (free tier available):
+Scribe works with **Google Gemini** (free tier available):
 
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Sign in with your Google account
@@ -198,21 +198,21 @@ Buddy works with **Google Gemini** (free tier available):
 
 > You can also use any **OpenAI-compatible** endpoint — see [AI Providers](#ai-providers).
 
-### Step 3 — Add Your API Key in Buddy
+### Step 3 — Add Your API Key in Scribe
 
-1. Open the **Buddy** app
+1. Open the **Scribe** app
 2. Tap the **Keys** tab (🔑)
 3. Paste your API key and tap **Add**
-4. You can add **multiple keys** — Buddy auto-rotates them to avoid rate limits
+4. You can add **multiple keys** — Scribe auto-rotates them to avoid rate limits
 
 ### Step 4 — Enable the Accessibility Service
 
-1. On the Buddy **Dashboard**, tap **"Grant Accessibility Access"**
+1. On the Scribe **Dashboard**, tap **"Grant Accessibility Access"**
 2. You'll be taken to Android Settings → Accessibility
-3. Find **"Buddy Assistant"** and toggle it **ON**
+3. Find **"Scribe Assistant"** and toggle it **ON**
 4. Tap **"Allow"** on the confirmation dialog
 
-### Step 5 — Start Using Buddy!
+### Step 5 — Start Using Scribe!
 
 Open **any app** — WhatsApp, Gmail, Notes, Twitter — type your text, add a trigger at the end, and watch the magic happen.
 
@@ -225,7 +225,7 @@ Open **any app** — WhatsApp, Gmail, Notes, Twitter — type your text, add a t
 
 ## ⚡ Built-in Commands
 
-Buddy ships with **10 pre-configured commands** that cover everyday writing needs. The default trigger prefix is `/` but it's fully customizable in Settings.
+Scribe ships with **10 pre-configured commands** that cover everyday writing needs. The default trigger prefix is `/` but it's fully customizable in Settings.
 
 | Trigger | What it does | Example Input | Example Output |
 |:--------|:-------------|:-------------|:---------------|
@@ -255,11 +255,11 @@ Buddy ships with **10 pre-configured commands** that cover everyday writing need
 
 ## 🛠️ Custom Commands
 
-Beyond the built-in set, Buddy lets you create your own trigger/prompt pairs for specialized writing tasks.
+Beyond the built-in set, Scribe lets you create your own trigger/prompt pairs for specialized writing tasks.
 
 ### Creating a Custom Command
 
-1. Open the **Buddy** app
+1. Open the **Scribe** app
 2. Tap the **Commands** tab
 3. Tap the **+** button
 4. Enter your **trigger** (e.g., `/tweet`)
@@ -405,7 +405,7 @@ Here are creative trigger ideas to inspire your custom command collection:
 
 ## 🤖 AI Providers
 
-Buddy supports multiple provider modes:
+Scribe supports multiple provider modes:
 
 ### Google Gemini (Default)
 
@@ -430,7 +430,7 @@ Get your free API key at [Groq Console →](https://console.groq.com/keys)
 
 ### Custom / OpenAI-Compatible
 
-Buddy can connect to any OpenAI-compatible endpoint:
+Scribe can connect to any OpenAI-compatible endpoint:
 
 - **OpenAI** — `https://api.openai.com/v1` with `gpt-4o-mini`, `gpt-4o`, etc.
 <!-- Groq moved to native integration -->
@@ -440,14 +440,14 @@ Buddy can connect to any OpenAI-compatible endpoint:
 - **Puter AI** — Free OpenAI-compatible tier
 
 **Configuration:**
-1. Open **Settings** in Buddy
+1. Open **Settings** in Scribe
 2. Select your provider (**Gemini**, **Groq**, or **Custom / OpenAI-compatible**)
 3. Enter your **Model name** and **Endpoint URL**
 4. Add the API key in the **Keys** tab
 
 ### Multi-Key Round Robin
 
-Add multiple API keys from the same or different accounts — Buddy **automatically rotates** through them:
+Add multiple API keys from the same or different accounts — Scribe **automatically rotates** through them:
 
 - Distributes load evenly across keys
 - Skips rate-limited keys and retries with the next available key
@@ -458,21 +458,21 @@ Add multiple API keys from the same or different accounts — Buddy **automatica
 
 ## 🔒 Privacy & Security
 
-Buddy is designed with a strict **privacy-first** philosophy:
+Scribe is designed with a strict **privacy-first** philosophy:
 
-### What Buddy Does NOT Do
+### What Scribe Does NOT Do
 - ❌ No analytics or telemetry — zero tracking
-- ❌ No intermediary servers — your text never touches Buddy's servers (there are none)
+- ❌ No intermediary servers — your text never touches Scribe's servers (there are none)
 - ❌ No data collection, storage, or logging
 - ❌ No internet access except for direct AI API calls you configure
 - ❌ No ads, no account required, no sign-up
 
-### What Buddy Does
+### What Scribe Does
 - ✅ All API keys encrypted at rest using **AES-256-GCM via Android Keystore**
 - ✅ Text only leaves your device when you intentionally trigger an AI command
 - ✅ Data flows **directly** from your device → your configured AI provider, nowhere else
 - ✅ Accessibility Service only reads text when a trigger character is detected (not a keylogger)
-- ✅ Password fields are **explicitly blocked** — Buddy never reads or modifies password inputs
+- ✅ Password fields are **explicitly blocked** — Scribe never reads or modifies password inputs
 - ✅ No clipboard snooping — clipboard is only touched as a fallback injection method, and the original clip is restored within 500ms
 
 ### Android Keystore Encryption Details
@@ -517,14 +517,14 @@ Your API keys are hardware-bound — they cannot be extracted from the device ev
 ### Project Architecture
 
 ```
-Buddy/
+Scribe/
 ├── app/src/main/
 │   ├── python/
 │   │   ├── gemini_client.py        ← Python: Gemini API calls
 │   │   ├── groq_client.py          ← Python: Groq API calls
 │   │   └── openai_client.py        ← Python: OpenAI-compatible API calls
-│   └── java/com/buddyapp/Buddy/
-│       ├── BuddyApp.kt             ← Application class, Python init
+│   └── java/com/scribeapp/Scribe/
+│       ├── ScribeApp.kt             ← Application class, Python init
 │       ├── MainActivity.kt         ← Entry point, navigation host
 │       ├── api/
 │       │   └── PythonBridge.kt     ← Kotlin ↔ Python interface (Chaquopy)
@@ -558,15 +558,15 @@ Download from [developer.android.com/studio](https://developer.android.com/studi
 ### Step 2 — Clone the Repository
 
 ```bash
-git clone https://github.com/Musheer360/Buddy.git
-cd Buddy
+git clone https://github.com/Mikelee8810/Scribe.git
+cd Scribe
 ```
 
 ### Step 3 — Open in Android Studio
 
 1. Launch Android Studio
 2. Click **"Open"** (not "New Project")
-3. Navigate to the cloned `Buddy` folder → click **OK**
+3. Navigate to the cloned `Scribe` folder → click **OK**
 4. Wait for **Gradle sync** to complete
 
 > ⚠️ First sync downloads ~500 MB (Android SDK components + Chaquopy Python 3.12). This is a one-time operation.
@@ -607,7 +607,7 @@ Output APK: `app/build/outputs/apk/release/app-release.apk`
 | Problem | Fix |
 |:--------|:----|
 | Gradle sync fails: "Chaquopy not found" | Check internet connection; Chaquopy downloads on first sync |
-| `"Python not started"` crash on launch | Ensure `android:name=".BuddyApp"` is set in `AndroidManifest.xml` |
+| `"Python not started"` crash on launch | Ensure `android:name=".ScribeApp"` is set in `AndroidManifest.xml` |
 | APK installs but AI doesn't respond | Verify your API key in the Keys tab |
 | Accessibility service not listed | Reinstall the APK, then re-check Settings → Accessibility |
 | Build error about ABI filters | Edit `app/build.gradle.kts` → remove `x86_64` from `abiFilters` |
@@ -619,9 +619,9 @@ Output APK: `app/build/outputs/apk/release/app-release.apk`
 
 ### Text Field Compatibility
 
-Buddy uses Android's standard `ACTION_SET_TEXT` accessibility action. Most apps work perfectly. However:
+Scribe uses Android's standard `ACTION_SET_TEXT` accessibility action. Most apps work perfectly. However:
 
-- **Chrome address bar / WebViews** — Text injection may be resisted. Buddy automatically falls back to clipboard-based paste injection.
+- **Chrome address bar / WebViews** — Text injection may be resisted. Scribe automatically falls back to clipboard-based paste injection.
 - **WeChat / aggressive wrappers** — Custom text engines may block injection entirely.
 - **Some OEM keyboards** — May not fire the expected accessibility events.
 
@@ -631,18 +631,18 @@ Aggressive OEM battery management may kill the Accessibility Service in the back
 
 | Manufacturer | Fix |
 |:-------------|:----|
-| **Xiaomi / MIUI** | Settings → Apps → Buddy → Battery Saver → No restrictions |
-| **OnePlus / OxygenOS** | Settings → Battery → Battery Optimization → Buddy → Don't optimize |
-| **Huawei / EMUI** | Settings → Apps → Buddy → Battery → Enable "Auto-launch" |
-| **Samsung** | Settings → Device Care → Battery → Background usage limits → Exempt Buddy |
+| **Xiaomi / MIUI** | Settings → Apps → Scribe → Battery Saver → No restrictions |
+| **OnePlus / OxygenOS** | Settings → Battery → Battery Optimization → Scribe → Don't optimize |
+| **Huawei / EMUI** | Settings → Apps → Scribe → Battery → Enable "Auto-launch" |
+| **Samsung** | Settings → Device Care → Battery → Background usage limits → Exempt Scribe |
 
 ### General Notes
 
-- Buddy requires an **active internet connection** to make AI API calls (unless using a local model via Ollama/LM Studio)
+- Scribe requires an **active internet connection** to make AI API calls (unless using a local model via Ollama/LM Studio)
 - The `/undo` command only reverts **one level** (the most recent replacement)
 - Very long texts may occasionally hit AI provider **token limits** — use `/shorten` on the result if needed
 - Accessibility Services must be **re-enabled** after app updates on some devices
-- **Banking & finance apps** (e.g. PhonePe, HDFC, SBI, Paytm) actively block apps that run Accessibility Services as an OS-level security measure. Buddy cannot bypass this. Use the **"Turn Off Buddy"** quick-toggle on the Dashboard to disable the service in one tap before opening sensitive apps, then re-enable it when done.
+- **Banking & finance apps** (e.g. PhonePe, HDFC, SBI, Paytm) actively block apps that run Accessibility Services as an OS-level security measure. Scribe cannot bypass this. Use the **"Turn Off Scribe"** quick-toggle on the Dashboard to disable the service in one tap before opening sensitive apps, then re-enable it when done.
 
 ---
 
@@ -652,8 +652,8 @@ Contributions are warmly welcome! Here's how to get involved:
 
 ### Ways to Contribute
 
-- 🐛 **Bug reports** — Open an [issue](https://github.com/Musheer360/Buddy/issues) with reproduction steps
-- 💡 **Feature requests** — Suggest improvements via [issues](https://github.com/Musheer360/Buddy/issues/new)
+- 🐛 **Bug reports** — Open an [issue](https://github.com/Mikelee8810/Scribe/issues) with reproduction steps
+- 💡 **Feature requests** — Suggest improvements via [issues](https://github.com/Mikelee8810/Scribe/issues/new)
 - 🔧 **Code contributions** — Fork → branch → PR
 - 📖 **Documentation** — Improve this README or add wiki pages
 - 🌍 **Translations** — Help localize the app UI
@@ -713,10 +713,10 @@ See the full [`LICENSE`](LICENSE) file for details.
 
 **Built with ❤️ for anyone who types too much.**
 
-*Buddy — because your ideas deserve better words.*
+*Scribe — because your ideas deserve better words.*
 
 <br/>
 
-[![Star this repo](https://img.shields.io/github/stars/Musheer360/Buddy?style=social)](https://github.com/Musheer360/Buddy)
+[![Star this repo](https://img.shields.io/github/stars/Mikelee8810/Scribe?style=social)](https://github.com/Mikelee8810/Scribe)
 
 </div>

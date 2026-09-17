@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Dark Obsidian Canvas -->
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#0D111A" />
+
+    <!-- Ambient Subtle Radial Glow behind the Scribe Nib -->
+    <path
+        android:pathData="M54,14 A40,40 0 1,0 54,94 A40,40 0 1,0 54,14 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="52"
+                android:gradientRadius="42"
+                android:type="radial">
+                <item android:color="#3D6366F1" android:offset="0.0" />
+                <item android:color="#1A06B6D4" android:offset="0.55" />
+                <item android:color="#000D111A" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle Diagonal Geometric Sheen Line -->
+    <path
+        android:pathData="M18,90 L90,18"
+        android:strokeWidth="0.8"
+        android:strokeColor="#1E293B" />
+
+</vector>
