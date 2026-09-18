@@ -599,12 +599,12 @@ fun DashboardScreen() {
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = ScribeTextPrimary,
-                                        contentColor = Color.White
+                                        containerColor = Color.White,
+                                        contentColor = Color(0xFF0F1535)
                                     ),
                                     modifier = Modifier.weight(1f).height(40.dp)
                                 ) {
-                                    Text("Apply to Editor", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Apply to Editor", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F1535))
                                 }
 
                                 OutlinedButton(

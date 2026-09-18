@@ -148,8 +148,8 @@ fun CommandsScreen() {
                                 openCreateSheet()
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = ScribeTextPrimary,
-                                contentColor = Color.White
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF0F1535)
                             ),
                             shape = RoundedCornerShape(20.dp),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
@@ -158,14 +158,15 @@ fun CommandsScreen() {
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = "New",
-                                tint = Color.White,
+                                tint = Color(0xFF0F1535),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "New",
                                 fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F1535)
                             )
                         }
                     }
@@ -827,14 +828,15 @@ fun CommandsScreen() {
                         enabled = canSave,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ScribeTextPrimary,
-                            contentColor = Color.White
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF0F1535)
                         ),
                         modifier = Modifier.weight(1.5f).height(48.dp)
                     ) {
                         Text(
                             text = if (isCreatingNew) "Create Snippet" else "Save Changes",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F1535)
                         )
                     }
                 }
@@ -851,14 +853,14 @@ fun CommandsScreen() {
                     text = "Delete \"${cmd.trigger}\"?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = ScribeTextPrimary
+                    color = ScribeGlassTextPrimary
                 )
             },
             text = {
                 Text(
                     text = "Are you sure you want to remove this snippet? This action cannot be undone.",
                     fontSize = 13.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -877,18 +879,18 @@ fun CommandsScreen() {
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Delete", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteConfirmDialog = null },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextSecondary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextSecondary)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", color = ScribeGlassTextSecondary)
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = Color(0xF4101633),
             shape = RoundedCornerShape(20.dp)
         )
     }
@@ -902,14 +904,14 @@ fun CommandsScreen() {
                     text = "Reset Built-in Snippets?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = ScribeTextPrimary
+                    color = ScribeGlassTextPrimary
                 )
             },
             text = {
                 Text(
                     text = "This will restore the original built-in shortcuts while keeping your custom ones intact.",
                     fontSize = 13.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -920,21 +922,24 @@ fun CommandsScreen() {
                         commands = commandManager.getCommands()
                         showResetDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ScribeTextPrimary, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0F1535)
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Reset", fontWeight = FontWeight.Bold)
+                    Text("Reset", fontWeight = FontWeight.Bold, color = Color(0xFF0F1535))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showResetDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextSecondary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextSecondary)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", color = ScribeGlassTextSecondary)
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = Color(0xF4101633),
             shape = RoundedCornerShape(20.dp)
         )
     }

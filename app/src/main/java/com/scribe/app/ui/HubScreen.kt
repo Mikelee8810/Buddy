@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
@@ -53,18 +54,31 @@ import com.scribe.app.ui.components.glassCard
 import com.scribe.app.ui.theme.*
 import kotlinx.coroutines.delay
 
-private fun formatModelTitle(raw: String): String {
+private fun formatModelBadge(provider: String, raw: String): String {
     val clean = raw.substringAfterLast("/").removeSuffix(":free")
-    return when {
-        clean.contains("gemma-4-31b", ignoreCase = true) -> "Gemma 4 · 31B"
-        clean.contains("gemma-2-9b", ignoreCase = true) -> "Gemma 2 · 9B"
-        clean.contains("llama-3.3-70b", ignoreCase = true) -> "Llama 3.3 · 70B"
+    val modelLabel = when {
+        clean.contains("gemma-4-31b", ignoreCase = true) -> "Gemma 4"
+        clean.contains("gemma-2-9b", ignoreCase = true) -> "Gemma 2"
+        clean.contains("llama-3.3-70b", ignoreCase = true) -> "Llama 3.3"
+        clean.contains("llama-4-scout", ignoreCase = true) -> "Llama 4"
+        clean.contains("llama-3.1-8b", ignoreCase = true) -> "Llama 3.1"
         clean.contains("deepseek-r1", ignoreCase = true) -> "DeepSeek R1"
-        clean.contains("gemini-2.0-flash", ignoreCase = true) -> "Gemini 2.0"
-        clean.contains("gemini-1.5-flash", ignoreCase = true) -> "Gemini 1.5"
-        clean.length > 18 -> clean.take(16) + "…"
+        clean.contains("gemini-2.5-flash-lite", ignoreCase = true) -> "2.5 Lite"
+        clean.contains("gemini-2.5-flash", ignoreCase = true) -> "2.5 Flash"
+        clean.contains("gemini-2.0-flash", ignoreCase = true) -> "2.0 Flash"
+        clean.contains("gemini-3.1-flash-lite-preview", ignoreCase = true) -> "3.1 Lite"
+        clean.contains("gemini-1.5-flash", ignoreCase = true) -> "1.5 Flash"
+        clean.length > 12 -> clean.take(10) + "…"
         else -> clean
     }
+    val providerPrefix = when (provider.lowercase()) {
+        "groq" -> "Groq"
+        "openrouter" -> "OpenRouter"
+        "gemini" -> "Gemini"
+        "custom" -> "Custom"
+        else -> provider.replaceFirstChar { it.uppercase() }
+    }
+    return "$providerPrefix · $modelLabel"
 }
 
 private fun checkServiceEnabled(context: Context): Boolean {
@@ -110,13 +124,34 @@ fun HubScreen(navController: NavController? = null) {
     val currentPrefix = remember(commands) { commandManager.getTriggerPrefix() }
 
     val prefs = remember { context.getSharedPreferences("settings", Context.MODE_PRIVATE) }
-    val providerType = remember(keyCount) { prefs.getString("provider_type", "openrouter") ?: "openrouter" }
-    val activeModelName = remember(providerType) {
-        when (providerType) {
-            "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
-            "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
-            "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
-            else         -> prefs.getString("model", "gemini-2.0-flash") ?: "gemini-2.0-flash"
+    var providerType by remember {
+        mutableStateOf(prefs.getString("provider_type", "openrouter") ?: "openrouter")
+    }
+    var activeModelName by remember {
+        mutableStateOf(
+            when (providerType) {
+                "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
+                "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
+                "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
+                else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+            }
+        )
+    }
+
+    DisposableEffect(prefs) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            val p = prefs.getString("provider_type", "openrouter") ?: "openrouter"
+            providerType = p
+            activeModelName = when (p) {
+                "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
+                "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
+                "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
+                else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
         }
     }
 
@@ -130,6 +165,14 @@ fun HubScreen(navController: NavController? = null) {
                 keyCount = keyManager.getKeys().size
                 commands = commandManager.getCommands()
                 recentHistory = historyManager.getHistory().take(3)
+                val p = prefs.getString("provider_type", "openrouter") ?: "openrouter"
+                providerType = p
+                activeModelName = when (p) {
+                    "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
+                    "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
+                    "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
+                    else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+                }
                 delay(2000)
             }
         }
@@ -287,16 +330,20 @@ fun HubScreen(navController: NavController? = null) {
                         }
                     }
 
-                    // Model pill — cobalt tinted glass
+                    // Model pill — cobalt tinted glass (tap to jump to Engine settings)
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
                             .background(ScribeGlassCobalt.copy(alpha = 0.22f))
                             .border(1.dp, ScribeGlassCobalt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                navController?.navigate(Screen.Settings.route)
+                            }
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = formatModelTitle(activeModelName),
+                            text = formatModelBadge(providerType, activeModelName),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = ScribeGlassCobalt
@@ -1015,14 +1062,15 @@ fun HubScreen(navController: NavController? = null) {
                         enabled = canSave,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = ScribeTextPrimary,
-                            contentColor = Color.White
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF0F1535)
                         ),
                         modifier = Modifier.weight(1.5f).height(48.dp)
                     ) {
                         Text(
                             text = if (isCreatingNew) "Create Snippet" else "Save Changes",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F1535)
                         )
                     }
                 }
@@ -1039,14 +1087,14 @@ fun HubScreen(navController: NavController? = null) {
                     text = "Delete \"${cmd.trigger}\"?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = ScribeTextPrimary
+                    color = ScribeGlassTextPrimary
                 )
             },
             text = {
                 Text(
                     text = "Are you sure you want to remove this snippet? This action cannot be undone.",
                     fontSize = 13.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -1065,18 +1113,18 @@ fun HubScreen(navController: NavController? = null) {
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Delete", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteConfirmDialog = null },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextSecondary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextSecondary)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", color = ScribeGlassTextSecondary)
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = Color(0xF4101633),
             shape = RoundedCornerShape(20.dp)
         )
     }
@@ -1090,14 +1138,14 @@ fun HubScreen(navController: NavController? = null) {
                     text = "Reset Built-in Snippets?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = ScribeTextPrimary
+                    color = ScribeGlassTextPrimary
                 )
             },
             text = {
                 Text(
                     text = "This will restore the original built-in shortcuts while keeping your custom ones intact.",
                     fontSize = 13.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -1108,21 +1156,24 @@ fun HubScreen(navController: NavController? = null) {
                         commands = commandManager.getCommands()
                         showResetDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ScribeTextPrimary, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0F1535)
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Reset", fontWeight = FontWeight.Bold)
+                    Text("Reset", fontWeight = FontWeight.Bold, color = Color(0xFF0F1535))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showResetDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextSecondary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextSecondary)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", color = ScribeGlassTextSecondary)
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = Color(0xF4101633),
             shape = RoundedCornerShape(20.dp)
         )
     }
