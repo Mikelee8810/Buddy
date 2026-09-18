@@ -48,16 +48,16 @@ fun ScribeBrandHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Scribe glowing fountain pen nib emblem
+                // Scribe glowing emblem (glass container)
                 Box(
                     modifier = Modifier
                         .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(ScribeSurfaceVariant)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White.copy(alpha = 0.15f))
                         .border(
                             1.dp,
-                            ScribeOutline,
-                            RoundedCornerShape(10.dp)
+                            Color.White.copy(alpha = 0.35f),
+                            RoundedCornerShape(12.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -70,10 +70,10 @@ fun ScribeBrandHeader(
 
                 Text(
                     text = title,
-                    fontSize = 24.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-0.5).sp,
-                    color = ScribeTextPrimary
+                    color = ScribeGlassTextPrimary
                 )
             }
 
@@ -83,7 +83,7 @@ fun ScribeBrandHeader(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.2.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     modifier = Modifier.padding(start = 48.dp, top = 2.dp)
                 )
             }

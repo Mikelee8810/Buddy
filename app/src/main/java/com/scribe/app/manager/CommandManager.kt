@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import com.scribe.app.model.Command
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class CommandManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("commands", Context.MODE_PRIVATE)
@@ -272,5 +275,24 @@ class CommandManager(context: Context) {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * Resolves dynamic template variables such as {date}, {time}, {clipboard}, {selection}, {input}
+     */
+    fun resolveVariables(template: String, selection: String = "", clipboardText: String = ""): String {
+        val now = Date()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+
+        val dateStr = dateFormat.format(now)
+        val timeStr = timeFormat.format(now)
+
+        return template
+            .replace("{date}", dateStr, ignoreCase = true)
+            .replace("{time}", timeStr, ignoreCase = true)
+            .replace("{clipboard}", clipboardText, ignoreCase = true)
+            .replace("{selection}", selection, ignoreCase = true)
+            .replace("{input}", selection, ignoreCase = true)
     }
 }

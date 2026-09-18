@@ -113,6 +113,16 @@ class AssistantService : AccessibilityService() {
         lastTriggerRefresh = System.currentTimeMillis()
     }
 
+    private fun getClipboardContent(): String {
+        return try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+            val item = clipboard?.primaryClip?.getItemAt(0)
+            item?.text?.toString() ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || isProcessing) return
         val pkg = event.packageName?.toString()?.lowercase() ?: ""
@@ -146,17 +156,20 @@ class AssistantService : AccessibilityService() {
         isProcessing = true
         currentJob?.cancel()
 
+        val clip = getClipboardContent()
+
         if (command.isTextReplacer) {
             val prefixText = text.substring(0, text.length - command.trigger.length)
-            val newText = prefixText + command.prompt
+            val resolved = commandManager.resolveVariables(command.prompt, selection = prefixText, clipboardText = clip)
+            val newText = prefixText + resolved
             handleTextReplacer(source, newText, text, command)
             return
         }
 
-        processCommand(source, cleanText, command)
+        processCommand(source, cleanText, command, clip)
     }
 
-    private fun processCommand(source: AccessibilityNodeInfo, text: String, command: Command) {
+    private fun processCommand(source: AccessibilityNodeInfo, text: String, command: Command, clipboardText: String) {
         val prefs = applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val providerType = prefs.getString("provider_type", "openrouter") ?: "openrouter"
         val model: String
@@ -182,6 +195,7 @@ class AssistantService : AccessibilityService() {
         }
         
         val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
+        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText)
 
         currentJob = serviceScope.launch {
             val originalText = text
@@ -201,10 +215,10 @@ class AssistantService : AccessibilityService() {
 
                         // ── Pure Kotlin ScribeApiClient HTTP Call ───────────
                         val result = when (providerType) {
-                            "openrouter" -> com.scribe.app.api.ScribeApiClient.openaiGenerate(command.prompt, text, key, model, temperature, "https://openrouter.ai/api/v1")
-                            "custom"     -> com.scribe.app.api.ScribeApiClient.openaiGenerate(command.prompt, text, key, model, temperature, endpoint)
-                            "groq"       -> com.scribe.app.api.ScribeApiClient.groqGenerate(command.prompt, text, key, model, temperature)
-                            else         -> com.scribe.app.api.ScribeApiClient.geminiGenerate(command.prompt, text, key, model, temperature)
+                            "openrouter" -> com.scribe.app.api.ScribeApiClient.openaiGenerate(promptToSend, text, key, model, temperature, "https://openrouter.ai/api/v1")
+                            "custom"     -> com.scribe.app.api.ScribeApiClient.openaiGenerate(promptToSend, text, key, model, temperature, endpoint)
+                            "groq"       -> com.scribe.app.api.ScribeApiClient.groqGenerate(promptToSend, text, key, model, temperature)
+                            else         -> com.scribe.app.api.ScribeApiClient.geminiGenerate(promptToSend, text, key, model, temperature)
                         }
 
                         usageManager.recordRequest(key, result.isSuccess)

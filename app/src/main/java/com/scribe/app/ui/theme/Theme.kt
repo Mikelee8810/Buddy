@@ -2,37 +2,36 @@ package com.scribe.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// ── Scribe Warm Editorial Studio Light Palette ──────────────────────────────
-// Fusion of Apple/Linear Modern Studio precision + Warm Editorial Linen luxury notebook.
-// Soft warm linen paper canvas, crisp pure white elevated cards, jet charcoal ink typography,
-// razor-sharp warm paper borders, and refined studio ink blue & brass accents.
+// ── Scribe Liquid Glass Palette (Apple iOS 26 / visionOS Tier) ───────────────
+// Semi-translucent frosted glass surfaces floating on a rich aurora gradient.
+// Crisp white typography, electric cobalt accents, specular hairline highlights.
 
-val ScribeBackground = Color(0xFFF9F8F6)        // Warm Editorial Linen Canvas
-val ScribeSurface = Color(0xFFFFFFFF)           // Pure White Floating Cards
-val ScribeSurfaceVariant = Color(0xFFF2EFEA)    // Interactive Containers & Input Fields
-val ScribeSurfaceHighlight = Color(0xFFEAE5DC)  // Active / Selected Containers
-val ScribeOutline = Color(0xFFE2DDD4)           // Delicate Warm Paper Hairline
-val ScribeOutlineAccent = Color(0xFF93C5FD)     // Subtle Studio Blue Accent Border
+val ScribeBackground = Color.Transparent           // Background is handled by AuroraBackground
+val ScribeSurface = Color(0x30FFFFFF)              // 19% Frosted Glass Surface
+val ScribeSurfaceVariant = Color(0x1EFFFFFF)       // 12% Recessed Glass Input / Container
+val ScribeSurfaceHighlight = Color(0x40FFFFFF)     // 25% Pressed State
+val ScribeOutline = Color(0x3DFFFFFF)              // 24% Specular Frosted Hairline Border
+val ScribeOutlineAccent = Color(0x8060A5FA)        // Sapphire Glass Focus Ring
 
 // Precision Accents
-val ScribeCobalt = Color(0xFF1D4ED8)            // Studio Ink Blue
-val ScribeIce = Color(0xFF0284C7)               // Electric Cerulean / Sky
-val ScribeCyan = Color(0xFF0891B2)              // Secondary Cyan Ink
-val ScribeEmerald = Color(0xFF059669)           // Forest Emerald (Status Active)
-val ScribeRose = Color(0xFFDC2626)              // Crimson Red (Destructive / Danger)
-val ScribeAmber = Color(0xFFD97706)             // Warm Editorial Brass / Amber
+val ScribeCobalt = Color(0xFF60A5FA)               // Electric Sapphire Cobalt Blue
+val ScribeIce = Color(0xFF38BDF8)                  // Sky Cyan
+val ScribeCyan = Color(0xFF22D3EE)                 // Secondary Cyan
+val ScribeEmerald = Color(0xFF34D399)              // Mint Emerald
+val ScribeRose = Color(0xFFF87171)                 // Crimson Danger
+val ScribeAmber = Color(0xFFFBBF24)                // Warm Amber
 
-// High-Contrast Ink Typography
-val ScribeTextPrimary = Color(0xFF191715)       // Jet Charcoal Ink (Headings & Body)
-val ScribeTextSecondary = Color(0xFF5E574E)     // Graphite Ink (Subtitles & Labels)
-val ScribeTextTertiary = Color(0xFF8C8377)      // Muted Paper Stone (Hints & Captions)
+// High-Legibility Glass Typography
+val ScribeTextPrimary = Color(0xFFFFFFFF)          // Pure White Ink
+val ScribeTextSecondary = Color(0xB8FFFFFF)        // 72% White
+val ScribeTextTertiary = Color(0x7AFFFFFF)         // 48% Muted White
 
 // Backward Compatibility Aliases
 val ScribeGold = ScribeAmber
@@ -46,16 +45,16 @@ val ScribeIndigo = ScribeCobalt
 val ScribeIndigoAccent = ScribeIce
 val ScribePulseGreen = ScribeEmerald
 val ScribeRed = ScribeRose
-val ScribeSurfaceDark = ScribeSurfaceVariant
+val ScribeSurfaceDark = Color(0xFF0F1535)
 val ScribeElevatedCard = ScribeSurface
 val ScribePureWhite = ScribeTextPrimary
 val ScribeMutedText = ScribeTextSecondary
 
-private val ScribeLightColorScheme = lightColorScheme(
-    background = ScribeBackground,
-    surface = ScribeSurface,
-    surfaceVariant = ScribeSurfaceVariant,
-    surfaceContainerHigh = ScribeSurfaceHighlight,
+private val ScribeGlassColorScheme = darkColorScheme(
+    background = Color(0xFF0A0F2E),
+    surface = Color(0xFF101633),
+    surfaceVariant = Color(0xFF171E42),
+    surfaceContainerHigh = Color(0xFF1F2856),
     onBackground = ScribeTextPrimary,
     onSurface = ScribeTextPrimary,
     onSurfaceVariant = ScribeTextSecondary,
@@ -63,36 +62,36 @@ private val ScribeLightColorScheme = lightColorScheme(
     outlineVariant = ScribeOutlineAccent,
     primary = ScribeCobalt,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDBEAFE),
-    onPrimaryContainer = Color(0xFF1E3A8A),
+    primaryContainer = Color(0xFF1E3A8A),
+    onPrimaryContainer = Color(0xFFDBEAFE),
     secondary = ScribeIce,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE0F2FE),
-    onSecondaryContainer = Color(0xFF0369A1),
+    secondaryContainer = Color(0xFF0369A1),
+    onSecondaryContainer = Color(0xFFE0F2FE),
     error = ScribeRose,
     onError = Color.White,
-    errorContainer = Color(0xFFFEE2E2),
-    onErrorContainer = Color(0xFF991B1B),
+    errorContainer = Color(0xFF991B1B),
+    onErrorContainer = Color(0xFFFEE2E2),
     tertiary = ScribeEmerald,
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFD1FAE5),
-    onTertiaryContainer = Color(0xFF065F46)
+    tertiaryContainer = Color(0xFF065F46),
+    onTertiaryContainer = Color(0xFFD1FAE5)
 )
 
 @Composable
 fun ScribeTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = ScribeLightColorScheme
+    val colorScheme = ScribeGlassColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = android.graphics.Color.TRANSPARENT
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            // Light status bars & navigation bars = dark icons on light background!
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = true
+            // Dark aurora background = light icons (white) on status & nav bars!
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 

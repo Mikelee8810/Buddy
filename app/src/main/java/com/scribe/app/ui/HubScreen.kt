@@ -1,8 +1,14 @@
 package com.scribe.app.ui
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,8 +16,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,7 +28,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -36,19 +39,57 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
+import com.scribe.app.Screen
 import com.scribe.app.manager.CommandManager
+import com.scribe.app.manager.HistoryManager
+import com.scribe.app.manager.KeyManager
 import com.scribe.app.model.Command
+import com.scribe.app.model.HistoryItem
 import com.scribe.app.ui.components.ScribeBrandHeader
+import com.scribe.app.ui.components.glassCard
 import com.scribe.app.ui.theme.*
+import kotlinx.coroutines.delay
+
+private fun formatModelTitle(raw: String): String {
+    val clean = raw.substringAfterLast("/").removeSuffix(":free")
+    return when {
+        clean.contains("gemma-4-31b", ignoreCase = true) -> "Gemma 4 · 31B"
+        clean.contains("gemma-2-9b", ignoreCase = true) -> "Gemma 2 · 9B"
+        clean.contains("llama-3.3-70b", ignoreCase = true) -> "Llama 3.3 · 70B"
+        clean.contains("deepseek-r1", ignoreCase = true) -> "DeepSeek R1"
+        clean.contains("gemini-2.0-flash", ignoreCase = true) -> "Gemini 2.0"
+        clean.contains("gemini-1.5-flash", ignoreCase = true) -> "Gemini 1.5"
+        clean.length > 18 -> clean.take(16) + "…"
+        else -> clean
+    }
+}
+
+private fun checkServiceEnabled(context: Context): Boolean {
+    val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+    val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_GENERIC)
+    return enabledServices.any {
+        it.resolveInfo.serviceInfo.packageName == context.packageName
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CommandsScreen() {
+fun HubScreen(navController: NavController? = null) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val clipboard = LocalClipboardManager.current
+
     val commandManager = remember { CommandManager(context) }
+    val historyManager = remember { HistoryManager(context) }
+    val keyManager = remember { KeyManager(context) }
+
+    var isServiceEnabled by remember { mutableStateOf(checkServiceEnabled(context)) }
+    var keyCount by remember { mutableIntStateOf(keyManager.getKeys().size) }
     var commands by remember { mutableStateOf(commandManager.getCommands()) }
+    var recentHistory by remember { mutableStateOf(historyManager.getHistory().take(3)) }
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -62,18 +103,44 @@ fun CommandsScreen() {
     var editingIsReplacer by remember { mutableStateOf(false) }
     var originalTrigger by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showResetDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf<Command?>(null) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val currentPrefix = remember(commands) { commandManager.getTriggerPrefix() }
+
+    val prefs = remember { context.getSharedPreferences("settings", Context.MODE_PRIVATE) }
+    val providerType = remember(keyCount) { prefs.getString("provider_type", "openrouter") ?: "openrouter" }
+    val activeModelName = remember(providerType) {
+        when (providerType) {
+            "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
+            "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
+            "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
+            else         -> prefs.getString("model", "gemini-2.0-flash") ?: "gemini-2.0-flash"
+        }
+    }
+
+    val activityLifecycle = (context as? ComponentActivity)?.lifecycle
+
+    LaunchedEffect(activityLifecycle) {
+        val lifecycle = activityLifecycle ?: return@LaunchedEffect
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                isServiceEnabled = checkServiceEnabled(context)
+                keyCount = keyManager.getKeys().size
+                commands = commandManager.getCommands()
+                recentHistory = historyManager.getHistory().take(3)
+                delay(2000)
+            }
+        }
+    }
 
     val filteredCommands = remember(commands, searchQuery, selectedFilter) {
         commands.filter { cmd ->
             val matchesSearch = searchQuery.isBlank() ||
                 cmd.trigger.contains(searchQuery, ignoreCase = true) ||
                 cmd.prompt.contains(searchQuery, ignoreCase = true)
-            
+
             val matchesFilter = when (selectedFilter) {
                 "AI" -> !cmd.isTextReplacer
                 "Instant" -> cmd.isTextReplacer
@@ -106,7 +173,7 @@ fun CommandsScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ScribeBackground)
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier
@@ -114,10 +181,10 @@ fun CommandsScreen() {
                 .padding(horizontal = 20.dp)
                 .padding(top = 16.dp)
         ) {
-            // ── Editorial Header ──────────────────────────────────────────────
+            // ── 1. Top Brand Header ───────────────────────────────────────────
             ScribeBrandHeader(
-                title = "Snippets",
-                subtitle = "${commands.size} active shortcuts",
+                title = "Scribe",
+                subtitle = "Ambient Copilot",
                 trailingContent = {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -131,29 +198,30 @@ fun CommandsScreen() {
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(ScribeSurfaceVariant)
+                                .background(Color.White.copy(alpha = 0.14f))
+                                .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.RestartAlt,
                                 contentDescription = "Reset Defaults",
-                                tint = ScribeTextSecondary,
+                                tint = ScribeGlassTextSecondary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
 
-                        // Luxury pill CTA button
+                        // Cobalt glass pill CTA button
                         Button(
                             onClick = {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 openCreateSheet()
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = ScribeTextPrimary,
+                                containerColor = ScribeGlassCobalt.copy(alpha = 0.85f),
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(20.dp),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -172,14 +240,84 @@ fun CommandsScreen() {
                 }
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // ── Search Bar (Spotlight / Apple Style) ───────────────────────────
+            // ── 2. Ambient Daemon Status Card (glass panel) ───────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ScribeSurfaceVariant)
+                    .glassCard(cornerRadius = 20.dp, fillAlpha = 0.22f)
+                    .clickable {
+                        if (!isServiceEnabled) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                    }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Status dot
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(if (isServiceEnabled) ScribeGlassEmerald else ScribeGlassRose)
+                        )
+                        Column {
+                            Text(
+                                text = if (isServiceEnabled) "Daemon Active & Running" else "Daemon Disabled",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = ScribeGlassTextPrimary
+                            )
+                            Text(
+                                text = if (isServiceEnabled) "Ambient in all apps" else "Tap to enable in Accessibility",
+                                fontSize = 11.sp,
+                                color = if (isServiceEnabled) ScribeGlassTextSecondary else ScribeGlassRose.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+
+                    // Model pill — cobalt tinted glass
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(ScribeGlassCobalt.copy(alpha = 0.22f))
+                            .border(1.dp, ScribeGlassCobalt.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = formatModelTitle(activeModelName),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ScribeGlassCobalt
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ── 3. Search Bar (glass) ─────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.13f))
+                    .border(
+                        1.dp,
+                        Color.White.copy(alpha = 0.30f),
+                        RoundedCornerShape(16.dp)
+                    )
                     .padding(horizontal = 12.dp, vertical = 2.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -190,7 +328,7 @@ fun CommandsScreen() {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = ScribeTextTertiary,
+                        tint = ScribeGlassTextTertiary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -199,9 +337,9 @@ fun CommandsScreen() {
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                "Search triggers or instructions...",
-                                fontSize = 14.sp,
-                                color = ScribeTextTertiary
+                                "Search triggers or prompt shortcuts...",
+                                fontSize = 13.sp,
+                                color = ScribeGlassTextTertiary
                             )
                         },
                         singleLine = true,
@@ -210,9 +348,9 @@ fun CommandsScreen() {
                             unfocusedBorderColor = Color.Transparent,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            cursorColor = ScribeCobalt,
-                            focusedTextColor = ScribeTextPrimary,
-                            unfocusedTextColor = ScribeTextPrimary
+                            cursorColor = ScribeGlassCobalt,
+                            focusedTextColor = ScribeGlassTextPrimary,
+                            unfocusedTextColor = ScribeGlassTextPrimary
                         ),
                         modifier = Modifier.weight(1f)
                     )
@@ -224,7 +362,7 @@ fun CommandsScreen() {
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Clear",
-                                tint = ScribeTextTertiary,
+                                tint = ScribeGlassTextTertiary,
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -232,9 +370,9 @@ fun CommandsScreen() {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // ── Filter Segmented Tabs ─────────────────────────────────────────
+            // ── 4. Filter Chips (glass pills) ────────────────────────────────
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -248,13 +386,22 @@ fun CommandsScreen() {
                     val isSelected = selectedFilter == filterName
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (isSelected) ScribeCobalt.copy(alpha = 0.1f) else ScribeSurfaceVariant)
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(
+                                if (isSelected) ScribeGlassCobalt.copy(alpha = 0.35f)
+                                else Color.White.copy(alpha = 0.12f)
+                            )
+                            .border(
+                                1.dp,
+                                if (isSelected) ScribeGlassCobalt.copy(alpha = 0.70f)
+                                else Color.White.copy(alpha = 0.25f),
+                                RoundedCornerShape(100.dp)
+                            )
                             .clickable {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 selectedFilter = filterName
                             }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -264,77 +411,62 @@ fun CommandsScreen() {
                                 text = filterName,
                                 fontSize = 12.sp,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                color = if (isSelected) ScribeCobalt else ScribeTextSecondary
+                                color = if (isSelected) ScribeGlassTextPrimary else ScribeGlassTextSecondary
                             )
                             Text(
                                 text = count.toString(),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Normal,
-                                color = if (isSelected) ScribeCobalt.copy(alpha = 0.8f) else ScribeTextTertiary
+                                color = if (isSelected) ScribeGlassTextPrimary.copy(alpha = 0.75f) else ScribeGlassTextTertiary
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // ── Snippets List (Open Apple Inset Group) ─────────────────────────
-            if (filteredCommands.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(top = 40.dp),
-                    contentAlignment = Alignment.TopCenter
+            // ── 5. Main Content: Snippet List (glass panel) ───────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .glassCard(cornerRadius = 24.dp, fillAlpha = 0.17f)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(ScribeSurfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SearchOff,
-                                contentDescription = null,
-                                tint = ScribeTextTertiary,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
+                    // Snippets Header
+                    item {
                         Text(
-                            text = "No snippets found",
-                            fontSize = 16.sp,
+                            text = "ACTIVE SHORTCUTS (${filteredCommands.size})",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ScribeTextPrimary
-                        )
-                        Text(
-                            text = if (searchQuery.isNotBlank()) "No shortcuts matching \"$searchQuery\"" else "Add your first snippet to get started",
-                            fontSize = 13.sp,
-                            color = ScribeTextSecondary
+                            letterSpacing = 1.1.sp,
+                            color = ScribeGlassTextTertiary,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
-                }
-            } else {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(0.5.dp, ScribeOutline),
-                    shadowElevation = 0.5.dp
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(top = 6.dp, bottom = 120.dp)
-                    ) {
+
+                    if (filteredCommands.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isNotBlank()) "No shortcuts matching \"$searchQuery\"" else "No snippets found",
+                                    fontSize = 13.sp,
+                                    color = ScribeGlassTextTertiary
+                                )
+                            }
+                        }
+                    } else {
                         itemsIndexed(filteredCommands, key = { _, cmd -> cmd.trigger }) { index, cmd ->
-                            RaycastCommandRow(
+                            HubCommandRow(
                                 command = cmd,
                                 onTap = {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -344,10 +476,64 @@ fun CommandsScreen() {
                             if (index < filteredCommands.size - 1) {
                                 HorizontalDivider(
                                     thickness = 0.5.dp,
-                                    color = ScribeOutline,
+                                    color = ScribeGlassDivider,
                                     modifier = Modifier.padding(start = 48.dp)
                                 )
                             }
+                        }
+                    }
+
+                    // ── Recent Rewrites Peek Section ──────────────────────────
+                    if (recentHistory.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(thickness = 0.5.dp, color = ScribeOutline)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "RECENT REWRITES",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.1.sp,
+                                    color = ScribeTextTertiary
+                                )
+                                if (navController != null) {
+                                    Text(
+                                        text = "View All ↗",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = ScribeCobalt,
+                                        modifier = Modifier.clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            navController.navigate(Screen.History.route) {
+                                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        itemsIndexed(recentHistory, key = { _, item -> item.id }) { _, item ->
+                            RecentRewriteCard(
+                                item = item,
+                                onCopy = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    val clip = ClipData.newPlainText("Scribe Rewrite", item.newText)
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    cm.setPrimaryClip(clip)
+                                    Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         }
                     }
                 }
@@ -360,8 +546,8 @@ fun CommandsScreen() {
         ModalBottomSheet(
             onDismissRequest = { selectedCommandForDetail = null },
             sheetState = sheetState,
-            containerColor = ScribeSurface,
-            contentColor = ScribeTextPrimary,
+            containerColor = Color(0xF8101633),
+            contentColor = ScribeGlassTextPrimary,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = {
                 Box(
@@ -369,7 +555,7 @@ fun CommandsScreen() {
                         .padding(vertical = 12.dp)
                         .size(width = 36.dp, height = 4.dp)
                         .clip(CircleShape)
-                        .background(ScribeOutline)
+                        .background(Color.White.copy(alpha = 0.35f))
                 )
             }
         ) {
@@ -388,7 +574,8 @@ fun CommandsScreen() {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(ScribeTextPrimary)
+                            .background(ScribeGlassCobalt.copy(alpha = 0.22f))
+                            .border(1.dp, ScribeGlassCobalt.copy(alpha = 0.50f), RoundedCornerShape(10.dp))
                             .padding(horizontal = 14.dp, vertical = 7.dp)
                     ) {
                         Text(
@@ -396,21 +583,22 @@ fun CommandsScreen() {
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            color = Color.White
+                            color = ScribeGlassCobalt
                         )
                     }
 
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (cmd.isTextReplacer) ScribeSurfaceVariant else ScribeCobalt.copy(alpha = 0.1f))
+                            .background(if (cmd.isTextReplacer) Color.White.copy(alpha = 0.12f) else ScribeGlassCobalt.copy(alpha = 0.20f))
+                            .border(1.dp, if (cmd.isTextReplacer) Color.White.copy(alpha = 0.25f) else ScribeGlassCobalt.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = if (cmd.isTextReplacer) Icons.Default.TextFields else Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = if (cmd.isTextReplacer) ScribeTextSecondary else ScribeCobalt,
+                                tint = if (cmd.isTextReplacer) ScribeGlassTextSecondary else ScribeGlassCobalt,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(5.dp))
@@ -418,7 +606,7 @@ fun CommandsScreen() {
                                 text = if (cmd.isTextReplacer) "Instant Replace" else "AI Rewrite",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (cmd.isTextReplacer) ScribeTextSecondary else ScribeCobalt
+                                color = if (cmd.isTextReplacer) ScribeGlassTextSecondary else ScribeGlassCobalt
                             )
                         }
                     }
@@ -426,28 +614,27 @@ fun CommandsScreen() {
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Prompt Container
                 Text(
                     text = if (cmd.isTextReplacer) "REPLACEMENT CONTENT" else "AI INSTRUCTION PROMPT",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
-                    color = ScribeTextTertiary
+                    color = ScribeGlassTextTertiary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(ScribeSurfaceVariant)
-                        .border(1.dp, ScribeOutline, RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.10f))
+                        .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
                         .padding(16.dp)
                 ) {
                     Text(
                         text = cmd.prompt,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
-                        color = ScribeTextPrimary
+                        color = ScribeGlassTextPrimary
                     )
                 }
 
@@ -462,6 +649,7 @@ fun CommandsScreen() {
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             clipboard.setText(AnnotatedString(cmd.prompt))
+                            Toast.makeText(context, "Copied prompt!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(14.dp),
                         border = BorderStroke(1.dp, ScribeOutline),
@@ -524,8 +712,8 @@ fun CommandsScreen() {
         ModalBottomSheet(
             onDismissRequest = { showEditSheet = false },
             sheetState = sheetState,
-            containerColor = ScribeSurface,
-            contentColor = ScribeTextPrimary,
+            containerColor = Color(0xF8101633),
+            contentColor = ScribeGlassTextPrimary,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = {
                 Box(
@@ -533,7 +721,7 @@ fun CommandsScreen() {
                         .padding(vertical = 12.dp)
                         .size(width = 36.dp, height = 4.dp)
                         .clip(CircleShape)
-                        .background(ScribeOutline)
+                        .background(Color.White.copy(alpha = 0.35f))
                 )
             }
         ) {
@@ -842,7 +1030,7 @@ fun CommandsScreen() {
         }
     }
 
-    // ── Delete Confirmation Dialog ────────────────────────────────────────────
+    // ── Delete Confirmation Dialog ────────────────────────────────────
     showDeleteConfirmDialog?.let { cmd ->
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = null },
@@ -941,11 +1129,10 @@ fun CommandsScreen() {
 }
 
 /**
- * Raycast Command Palette Row
- * Dense, tactile row with human-curated titles, monospace hotkey chips, and subtle metadata.
+ * Clean tactile snippet row for the Hub.
  */
 @Composable
-private fun RaycastCommandRow(
+private fun HubCommandRow(
     command: Command,
     onTap: () -> Unit
 ) {
@@ -980,62 +1167,63 @@ private fun RaycastCommandRow(
         else -> command.prompt.take(80)
     }
 
+    val accentColor = if (command.isTextReplacer) ScribeGlassEmerald else ScribeGlassCobalt
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onTap() }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Refined Monospace Token Tag (Calm, subtle porcelain chip)
         Box(
             modifier = Modifier
                 .padding(end = 12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(ScribeSurfaceVariant)
-                .padding(horizontal = 7.dp, vertical = 3.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(accentColor.copy(alpha = 0.20f))
+                .border(1.dp, accentColor.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
                 text = command.trigger,
                 fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = ScribeCobalt
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                color = accentColor
             )
         }
 
-        // Title and description
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = friendlyTitle,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                color = ScribeTextPrimary
+                color = ScribeGlassTextPrimary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
-                color = ScribeTextSecondary,
-                maxLines = 2,
+                color = ScribeGlassTextSecondary,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
-        // Instant replacer indicator (only if text replacer, zero noise for AI)
         if (command.isTextReplacer) {
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = ScribeSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 6.dp)
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 6.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.White.copy(alpha = 0.12f))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = "EXPAND",
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = ScribeTextTertiary,
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                    color = ScribeGlassTextTertiary
                 )
             }
         }
@@ -1043,8 +1231,88 @@ private fun RaycastCommandRow(
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = ScribeTextTertiary,
-            modifier = Modifier.size(15.dp)
+            tint = ScribeGlassTextTertiary,
+            modifier = Modifier.size(16.dp)
         )
+    }
+}
+
+/**
+ * Mini peek card for recent background rewrites with quick 1-tap copy.
+ */
+@Composable
+private fun RecentRewriteCard(
+    item: HistoryItem,
+    onCopy: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp)
+            .glassCard(cornerRadius = 14.dp, fillAlpha = 0.14f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(ScribeGlassCobalt.copy(alpha = 0.20f))
+                            .border(1.dp, ScribeGlassCobalt.copy(alpha = 0.40f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = item.commandTrigger,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            color = ScribeGlassCobalt
+                        )
+                    }
+                    Text(
+                        text = "Transformed text",
+                        fontSize = 11.sp,
+                        color = ScribeGlassTextTertiary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = item.newText,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = ScribeGlassTextPrimary
+                )
+            }
+
+            IconButton(
+                onClick = onCopy,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.14f))
+                    .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy Rewrite",
+                    tint = ScribeGlassTextPrimary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
     }
 }

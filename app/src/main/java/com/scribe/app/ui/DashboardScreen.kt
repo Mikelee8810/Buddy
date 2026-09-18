@@ -25,39 +25,48 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.scribe.app.api.ScribeApiClient
 import com.scribe.app.manager.CommandManager
+import com.scribe.app.manager.HistoryManager
 import com.scribe.app.manager.KeyManager
-import com.scribe.app.ui.components.*
+import com.scribe.app.ui.components.ScribeBrandHeader
 import com.scribe.app.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
+
+private fun formatModelTitle(raw: String): String {
+    val clean = raw.substringAfterLast("/").removeSuffix(":free")
+    return when {
+        clean.contains("gemma-4-31b", ignoreCase = true) -> "Gemma 4 · 31B"
+        clean.contains("gemma-2-9b", ignoreCase = true) -> "Gemma 2 · 9B"
+        clean.contains("llama-3.3-70b", ignoreCase = true) -> "Llama 3.3 · 70B"
+        clean.contains("deepseek-r1", ignoreCase = true) -> "DeepSeek R1"
+        clean.contains("gemini-2.0-flash", ignoreCase = true) -> "Gemini 2.0"
+        clean.contains("gemini-1.5-flash", ignoreCase = true) -> "Gemini 1.5"
+        clean.length > 18 -> clean.take(16) + "…"
+        else -> clean
+    }
+}
 
 private fun checkServiceEnabled(context: Context): Boolean {
     val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
@@ -74,19 +83,22 @@ fun DashboardScreen() {
     val coroutineScope = rememberCoroutineScope()
     val keyManager = remember { KeyManager(context) }
     val commandManager = remember { CommandManager(context) }
+    val historyManager = remember { HistoryManager(context) }
+
     var isServiceEnabled by remember { mutableStateOf(checkServiceEnabled(context)) }
     var keyCount by remember { mutableIntStateOf(keyManager.getKeys().size) }
     var currentPrefix by remember { mutableStateOf(commandManager.getTriggerPrefix()) }
-    var latestVersion by remember { mutableStateOf<String?>(null) }
-    val versionName = remember {
-        try {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
-        } catch (e: Exception) { "1.0.0" }
-    }
-    val uriHandler = LocalUriHandler.current
 
-    // Live Scratchpad State
-    var testInputText by remember { mutableStateOf("Hey, can we sync up real quick tomorrow morning to finalize that proposal?") }
+    // Sample drafts for quick testing
+    val sampleDrafts = listOf(
+        "hey can we sync up real quick tomorrow morning to finalize that quarterly pitch deck and budget numbers?",
+        "I was thinking about the product roadmap and we need to cut down technical debt before shipping the next big feature.",
+        "Your order has been shipped and will arrive in 2 business days. Thank you for your business."
+    )
+    var sampleIndex by remember { mutableIntStateOf(0) }
+
+    // Live Canvas State
+    var canvasText by remember { mutableStateOf(sampleDrafts[0]) }
     var selectedCommandTrigger by remember { mutableStateOf("${currentPrefix}formal") }
     var isTransforming by remember { mutableStateOf(false) }
     var transformResult by remember { mutableStateOf<String?>(null) }
@@ -109,21 +121,6 @@ fun DashboardScreen() {
 
     LaunchedEffect(activityLifecycle) {
         val lifecycle = activityLifecycle ?: return@LaunchedEffect
-
-        launch(Dispatchers.IO) {
-            try {
-                val url = URL("https://api.github.com/repos/Mikelee8810/Scribe/releases/latest")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-                if (connection.responseCode == 200) {
-                    val response = connection.inputStream.bufferedReader().readText()
-                    val json = JSONObject(response)
-                    latestVersion = json.getString("tag_name").removePrefix("v")
-                }
-            } catch (_: Exception) {}
-        }
-
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
                 isServiceEnabled = checkServiceEnabled(context)
@@ -134,408 +131,355 @@ fun DashboardScreen() {
         }
     }
 
+    fun executeTransform(trigger: String) {
+        if (keyCount == 0) {
+            Toast.makeText(context, "Add an API key in the Engine tab first!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (canvasText.isBlank()) {
+            Toast.makeText(context, "Please enter some text in the studio!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        isTransforming = true
+        transformError = null
+        transformResult = null
+        selectedCommandTrigger = trigger
+
+        coroutineScope.launch {
+            val key = keyManager.getNextKey() ?: ""
+            val rawPrompt = commandManager.getCommands().find { it.trigger.equals(trigger, ignoreCase = true) }?.prompt
+                ?: when {
+                    trigger.endsWith("formal") -> "Rewrite the following text into polished, authoritative, executive-ready prose. Output only the transformed text."
+                    trigger.endsWith("fix") -> "Fix all spelling, grammar, punctuation, and typographical errors while preserving the original tone. Output only the fixed text."
+                    trigger.endsWith("casual") -> "Rewrite the following text into friendly, natural, conversational prose. Output only the transformed text."
+                    trigger.endsWith("shorten") -> "Condense the following text into punchy, clear sentences without losing key information. Output only the shortened text."
+                    trigger.endsWith("expand") -> "Elaborate and provide vivid, thoughtful detail to the following text. Output only the expanded text."
+                    else -> "Transform this text with precision."
+                }
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+            val clipText = try { clipboard?.primaryClip?.getItemAt(0)?.text?.toString() ?: "" } catch (_: Exception) { "" }
+            val prompt = commandManager.resolveVariables(rawPrompt, selection = canvasText, clipboardText = clipText)
+            val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
+            val startTime = System.currentTimeMillis()
+
+            val result = withContext(Dispatchers.IO) {
+                when (providerType) {
+                    "openrouter" -> ScribeApiClient.openaiGenerate(
+                        prompt = prompt,
+                        text = canvasText,
+                        apiKey = key,
+                        model = activeModelName,
+                        temperature = temperature,
+                        endpoint = "https://openrouter.ai/api/v1"
+                    )
+                    "groq" -> ScribeApiClient.groqGenerate(
+                        prompt = prompt,
+                        text = canvasText,
+                        apiKey = key,
+                        model = activeModelName,
+                        temperature = temperature
+                    )
+                    "custom" -> ScribeApiClient.openaiGenerate(
+                        prompt = prompt,
+                        text = canvasText,
+                        apiKey = key,
+                        model = activeModelName,
+                        temperature = temperature,
+                        endpoint = prefs.getString("custom_endpoint", "") ?: ""
+                    )
+                    else -> ScribeApiClient.geminiGenerate(
+                        prompt = prompt,
+                        text = canvasText,
+                        apiKey = key,
+                        model = activeModelName,
+                        temperature = temperature
+                    )
+                }
+            }
+
+            val elapsed = System.currentTimeMillis() - startTime
+            isTransforming = false
+            transformLatencyMs = elapsed
+
+            if (result.isSuccess) {
+                val output = result.getOrThrow()
+                transformResult = output
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                // Log to history audit
+                historyManager.addHistoryItem(
+                    originalText = canvasText,
+                    newText = output,
+                    commandTrigger = trigger
+                )
+            } else {
+                transformError = result.exceptionOrNull()?.message ?: "Transformation failed"
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(ScribeBackground)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 120.dp)
     ) {
-        // Luxury Scribe Brand Header
-        ScribeBrandHeader(
-            title = "Scribe",
-            subtitle = "AI Keyboard Co-Pilot",
-            trailingContent = {
-                latestVersion?.let { latest ->
-                    val isLatest = versionName == latest || versionName >= latest
-                    val badgeColor = if (isLatest) ScribeEmerald else ScribeIndigo
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(ScribeSurfaceVariant)
-                            .border(1.dp, ScribeOutline, RoundedCornerShape(12.dp))
-                            .clickable {
-                                uriHandler.openUri("https://github.com/Mikelee8810/Scribe")
-                            }
-                            .padding(horizontal = 12.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(badgeColor)
-                        )
-                        Text(
-                            text = "v$versionName",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ScribeTextPrimary
+        // ── 1. Top Identity & Workspace Header ─────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = ScribeSurfaceVariant,
+                    border = BorderStroke(0.5.dp, ScribeOutline),
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Outlined.EditNote,
+                            contentDescription = "Scribe",
+                            tint = ScribeCobalt,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
+                Column {
+                    Text(
+                        text = "Scribe",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        letterSpacing = (-0.3).sp,
+                        color = ScribeTextPrimary
+                    )
+                    Text(
+                        text = "Writing Studio",
+                        fontSize = 12.sp,
+                        color = ScribeTextSecondary
+                    )
+                }
             }
-        )
 
-        // ── 1. BENTO HERO TILE: Live Engine & Active Model ────────────────────────────
-        ScribeCard(
-            border = BorderStroke(
-                1.dp,
-                if (isServiceEnabled) ScribeEmerald.copy(alpha = 0.3f) else ScribeAmber.copy(alpha = 0.3f)
-            ),
-            backgroundColor = ScribeSurface,
-            contentPadding = PaddingValues(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Subtle Model Chip (Calm, pill style, zero truncation)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = ScribeSurfaceVariant,
+                border = BorderStroke(0.5.dp, ScribeOutline)
             ) {
                 Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isServiceEnabled) ScribeEmerald.copy(alpha = 0.12f) else ScribeAmber.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isServiceEnabled) Icons.Outlined.CheckCircle else Icons.Outlined.Bolt,
-                            contentDescription = null,
-                            tint = if (isServiceEnabled) ScribeEmerald else ScribeAmber,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            ScribePulsePip(isActive = isServiceEnabled)
-                            Text(
-                                text = "SCRIBE ENGINE",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp,
-                                color = ScribeTextTertiary
-                            )
-                        }
-                        Text(
-                            text = if (isServiceEnabled) "Active & Listening" else "Setup Required",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = ScribeTextPrimary
-                        )
-                    }
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (keyCount > 0) ScribeEmerald else ScribeTextTertiary)
+                    )
+                    Text(
+                        text = formatModelTitle(activeModelName),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = ScribeTextPrimary
+                    )
                 }
-
-                ScribeStatusBadge(
-                    label = if (isServiceEnabled) "Online" else "Pending",
-                    isActive = isServiceEnabled
-                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Active Provider & Model Pill
+        // ── 2. Calm Inline Service Notice (Only when paused) ───────────────────
+        if (!isServiceEnabled) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(ScribeSurfaceVariant)
-                    .border(1.dp, ScribeOutline, RoundedCornerShape(10.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(bottom = 12.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    }
+                    .padding(vertical = 4.dp, horizontal = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Psychology,
-                        contentDescription = null,
-                        tint = ScribeCobalt,
-                        modifier = Modifier.size(16.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(ScribeTextTertiary)
                     )
                     Text(
-                        text = providerType.replaceFirstChar { it.uppercase() },
+                        text = "Keyboard assistant service paused",
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ScribeTextPrimary
+                        color = ScribeTextSecondary
                     )
                 }
                 Text(
-                    text = activeModelName.take(24) + if (activeModelName.length > 24) "..." else "",
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = ScribeTextSecondary
-                )
-            }
-
-            if (!isServiceEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-                ScribeButton(
-                    text = "Enable Scribe Engine",
-                    icon = Icons.AutoMirrored.Outlined.ArrowForward,
-                    onClick = {
-                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    }
+                    text = "Turn on ↗",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = ScribeCobalt
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // ── 2. BENTO TILE: Live In-App Test Scratchpad ────────────────────────────────
-        ScribeCard(
-            border = BorderStroke(1.dp, ScribeOutline),
-            backgroundColor = ScribeSurface,
-            contentPadding = PaddingValues(20.dp)
+        // ── 3. Draft Editor (Apple Notes Editorial Paper Canvas) ───────────────
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = ScribeSurface,
+            border = BorderStroke(0.5.dp, ScribeOutline),
+            shadowElevation = 1.dp
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                // Top Editor Action Row
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ScribeCobalt.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Science,
-                            contentDescription = null,
-                            tint = ScribeCobalt,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                    val words = if (canvasText.isBlank()) 0 else canvasText.trim().split(Regex("\\s+")).size
                     Text(
-                        text = "LIVE SCRATCHPAD",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
+                        text = "$words words  ·  ${canvasText.length} chars",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
                         color = ScribeTextTertiary
                     )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Sample",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ScribeCobalt,
+                            modifier = Modifier
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    sampleIndex = (sampleIndex + 1) % sampleDrafts.size
+                                    canvasText = sampleDrafts[sampleIndex]
+                                }
+                        )
+
+                        if (canvasText.isNotEmpty()) {
+                            Text(
+                                text = "Clear",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = ScribeTextTertiary,
+                                modifier = Modifier
+                                    .clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        canvasText = ""
+                                    }
+                            )
+                        }
+                    }
                 }
 
-                if (transformLatencyMs > 0) {
-                    ScribeLatencyBadge(latencyMs = transformLatencyMs)
-                }
-            }
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Test Text Input Field
-            OutlinedTextField(
-                value = testInputText,
-                onValueChange = { testInputText = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 90.dp),
-                placeholder = {
-                    Text(
-                        "Type or paste text to test Scribe...",
-                        color = ScribeTextTertiary,
-                        fontSize = 13.sp
+                // Spacious Editor Input
+                OutlinedTextField(
+                    value = canvasText,
+                    onValueChange = { canvasText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 160.dp),
+                    placeholder = {
+                        Text(
+                            "What would you like to write or refine?",
+                            color = ScribeTextTertiary,
+                            fontSize = 17.sp,
+                            lineHeight = 26.sp
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedTextColor = ScribeTextPrimary,
+                        unfocusedTextColor = ScribeTextPrimary,
+                        cursorColor = ScribeCobalt
+                    ),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = 17.sp,
+                        lineHeight = 26.sp,
+                        color = ScribeTextPrimary
                     )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = ScribeCobalt,
-                    unfocusedBorderColor = ScribeOutline,
-                    focusedContainerColor = ScribeSurfaceVariant,
-                    unfocusedContainerColor = ScribeSurfaceVariant,
-                    focusedTextColor = ScribeTextPrimary,
-                    unfocusedTextColor = ScribeTextPrimary,
-                    cursorColor = ScribeCobalt
-                ),
-                shape = RoundedCornerShape(14.dp)
-            )
+                )
+            }
+        }
 
-            Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            // Quick Command Chips
-            Text(
-                text = "SELECT SHORTCUT:",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = ScribeTextTertiary
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+        // ── 4. iOS Segmented Command Bar ──────────────────────────────────────
+        val modes = listOf(
+            Triple("${currentPrefix}fix", "Proofread", Icons.Outlined.AutoAwesome),
+            Triple("${currentPrefix}formal", "Professional", Icons.Outlined.WorkOutline),
+            Triple("${currentPrefix}casual", "Friendly", Icons.Outlined.ChatBubbleOutline),
+            Triple("${currentPrefix}shorten", "Concise", Icons.Outlined.Compress)
+        )
 
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = ScribeSurfaceVariant,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val sampleCommands = listOf("${currentPrefix}fix", "${currentPrefix}formal", "${currentPrefix}casual", "${currentPrefix}shorten", "${currentPrefix}expand")
-                sampleCommands.forEach { trigger ->
-                    ScribeChip(
-                        text = trigger,
-                        isSelected = selectedCommandTrigger == trigger,
-                        onClick = { selectedCommandTrigger = trigger }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Run Transform Button
-            ScribeButton(
-                text = if (isTransforming) "Synthesizing with AI..." else "Run $selectedCommandTrigger Transform",
-                icon = if (isTransforming) null else Icons.Outlined.AutoAwesome,
-                onClick = {
-                    if (keyCount == 0) {
-                        Toast.makeText(context, "Add an API key in the Keys tab first!", Toast.LENGTH_SHORT).show()
-                        return@ScribeButton
-                    }
-                    if (testInputText.isBlank()) {
-                        Toast.makeText(context, "Please enter some text to test!", Toast.LENGTH_SHORT).show()
-                        return@ScribeButton
-                    }
-
-                    isTransforming = true
-                    transformError = null
-                    transformResult = null
-
-                    coroutineScope.launch {
-                        val key = keyManager.getNextKey() ?: ""
-                        val prompt = commandManager.getCommands().find { it.trigger == selectedCommandTrigger }?.prompt
-                            ?: "Transform this text into clean, professional writing."
-                        val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
-                        val startTime = System.currentTimeMillis()
-
-                        val result = withContext(Dispatchers.IO) {
-                            when (providerType) {
-                                "openrouter" -> ScribeApiClient.openaiGenerate(
-                                    prompt = prompt,
-                                    text = testInputText,
-                                    apiKey = key,
-                                    model = activeModelName,
-                                    temperature = temperature,
-                                    endpoint = "https://openrouter.ai/api/v1"
-                                )
-                                "groq" -> ScribeApiClient.groqGenerate(
-                                    prompt = prompt,
-                                    text = testInputText,
-                                    apiKey = key,
-                                    model = activeModelName,
-                                    temperature = temperature
-                                )
-                                "custom" -> ScribeApiClient.openaiGenerate(
-                                    prompt = prompt,
-                                    text = testInputText,
-                                    apiKey = key,
-                                    model = activeModelName,
-                                    temperature = temperature,
-                                    endpoint = prefs.getString("custom_endpoint", "") ?: ""
-                                )
-                                else -> ScribeApiClient.geminiGenerate(
-                                    prompt = prompt,
-                                    text = testInputText,
-                                    apiKey = key,
-                                    model = activeModelName,
-                                    temperature = temperature
-                                )
+                modes.forEach { (trigger, label, icon) ->
+                    val isSelected = selectedCommandTrigger == trigger
+                    Surface(
+                        shape = RoundedCornerShape(9.dp),
+                        color = if (isSelected) ScribeSurface else Color.Transparent,
+                        shadowElevation = if (isSelected) 1.dp else 0.dp,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(9.dp))
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                selectedCommandTrigger = trigger
                             }
-                        }
-
-                        val elapsed = System.currentTimeMillis() - startTime
-                        isTransforming = false
-                        transformLatencyMs = elapsed
-
-                        if (result.isSuccess) {
-                            transformResult = result.getOrThrow()
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        } else {
-                            transformError = result.exceptionOrNull()?.message ?: "Unknown error"
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        }
-                    }
-                }
-            )
-
-            // Result Display Card
-            AnimatedVisibility(
-                visible = transformResult != null || transformError != null,
-                enter = fadeIn() + androidx.compose.animation.expandVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
-                exit = fadeOut()
-            ) {
-                Column(modifier = Modifier.padding(top = 14.dp)) {
-                    if (transformResult != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(ScribeEmerald.copy(alpha = 0.08f))
-                                .border(1.dp, ScribeEmerald.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                                .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "TRANSFORMED RESULT",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp,
-                                        color = ScribeEmerald
-                                    )
-                                    IconButton(
-                                        onClick = {
-                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                            val clip = ClipData.newPlainText("Scribe Output", transformResult)
-                                            clipboard.setPrimaryClip(clip)
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.ContentCopy,
-                                            contentDescription = "Copy",
-                                            tint = ScribeEmerald,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = transformResult!!,
-                                    fontSize = 14.sp,
-                                    color = ScribeTextPrimary,
-                                    lineHeight = 20.sp
-                                )
-                            }
-                        }
-                    } else if (transformError != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(ScribeRose.copy(alpha = 0.08f))
-                                .border(1.dp, ScribeRose.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                                .padding(14.dp)
-                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (isSelected) ScribeCobalt else ScribeTextSecondary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "Error: $transformError",
-                                fontSize = 12.sp,
-                                color = ScribeRose
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                color = if (isSelected) ScribeTextPrimary else ScribeTextSecondary
                             )
                         }
                     }
@@ -543,205 +487,241 @@ fun DashboardScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // ── 3. BENTO 2-COLUMN TELEMETRY GRID ──────────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        // ── 5. Primary Action Button ──────────────────────────────────────────
+        val selectedLabel = modes.find { it.first == selectedCommandTrigger }?.second ?: "Transform"
+        Button(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                executeTransform(selectedCommandTrigger)
+            },
+            enabled = !isTransforming && canvasText.isNotBlank(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = ScribeCobalt,
+                contentColor = Color.White,
+                disabledContainerColor = ScribeSurfaceVariant,
+                disabledContentColor = ScribeTextTertiary
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
         ) {
-            // Metric Tile 1: API Keys
-            ScribeCard(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "API POOL",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = ScribeTextTertiary
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.Key,
-                        contentDescription = null,
-                        tint = ScribeCobalt,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "$keyCount Keys",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = ScribeTextPrimary
+            if (isTransforming) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (keyCount > 0) "Multi-key rotation" else "Key required",
-                    fontSize = 11.sp,
-                    color = if (keyCount > 0) ScribeEmerald else ScribeRose,
-                    fontWeight = FontWeight.Medium
+                    text = "Refining text...",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
-            }
-
-            // Metric Tile 2: Trigger Prefix
-            ScribeCard(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "TRIGGER",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = ScribeTextTertiary
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.Terminal,
-                        contentDescription = null,
-                        tint = ScribeCobalt,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "$currentPrefix<cmd>",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = ScribeTextPrimary
+            } else {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (canvasText.isNotBlank()) Color.White else ScribeTextTertiary
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Shortcut trigger",
-                    fontSize = 11.sp,
-                    color = ScribeTextSecondary,
-                    fontWeight = FontWeight.Medium
+                    text = "Rewrite as $selectedLabel",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // ── 4. BENTO TILE: Security & Privacy Isolation ──────────────────────────────
-        ScribeCard(
-            border = BorderStroke(1.dp, ScribeEmerald.copy(alpha = 0.25f)),
-            contentPadding = PaddingValues(16.dp)
+        // ── 6. Transformation Result Review ───────────────────────────────────
+        AnimatedVisibility(
+            visible = transformResult != null || transformError != null,
+            enter = fadeIn() + androidx.compose.animation.expandVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
+            exit = fadeOut()
         ) {
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ScribeEmerald.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Shield,
-                        contentDescription = null,
-                        tint = ScribeEmerald,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Column {
-                    Text(
-                        text = "Vault Protection Active",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ScribeTextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Password managers (1Password, Bitwarden) and banking apps are isolated from Scribe's text buffer.",
-                        fontSize = 12.sp,
-                        color = ScribeTextSecondary,
-                        lineHeight = 17.sp
-                    )
-                }
-            }
-        }
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                if (transformResult != null) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = ScribeSurface,
+                        border = BorderStroke(1.dp, ScribeOutline),
+                        shadowElevation = 1.dp
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "REFINED DRAFT",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.8.sp,
+                                    color = ScribeTextSecondary
+                                )
 
-        Spacer(modifier = Modifier.height(18.dp))
+                                if (transformLatencyMs > 0) {
+                                    Text(
+                                        text = "${transformLatencyMs}ms",
+                                        fontSize = 11.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = ScribeTextTertiary
+                                    )
+                                }
+                            }
 
-        // ── 5. BENTO TILE: Tactile Command Palette ───────────────────────────────────
-        ScribeCard(
-            contentPadding = PaddingValues(18.dp)
-        ) {
-            Text(
-                text = "POPULAR SHORTCUTS (TAP TO TEST)",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = ScribeTextTertiary
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
-            val quickTriggers = listOf(
-                Pair("${currentPrefix}fix", "Fix grammar, spelling, punctuation"),
-                Pair("${currentPrefix}casual", "Conversational, human & relaxed"),
-                Pair("${currentPrefix}formal", "Polished, executive prose"),
-                Pair("${currentPrefix}shorten", "Condense into punchy summary"),
-                Pair("${currentPrefix}undo", "Restore previous pre-rewrite text")
-            )
+                            Text(
+                                text = transformResult!!,
+                                fontSize = 15.sp,
+                                lineHeight = 23.sp,
+                                color = ScribeTextPrimary
+                            )
 
-            quickTriggers.forEachIndexed { i, (cmd, desc) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable {
-                            selectedCommandTrigger = cmd
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        canvasText = transformResult!!
+                                        Toast.makeText(context, "Applied to editor!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ScribeTextPrimary,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier.weight(1f).height(40.dp)
+                                ) {
+                                    Text("Apply to Editor", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        val clip = ClipData.newPlainText("Scribe Output", transformResult)
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(context, "Copied!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(1.dp, ScribeOutline),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ScribeTextPrimary),
+                                    modifier = Modifier.weight(1f).height(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentCopy,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Copy", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
                         }
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (selectedCommandTrigger == cmd) ScribeCobalt.copy(alpha = 0.12f) else ScribeSurfaceVariant)
-                            .border(1.dp, if (selectedCommandTrigger == cmd) ScribeCobalt else ScribeOutline, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    }
+                } else if (transformError != null) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = ScribeSurfaceVariant,
+                        border = BorderStroke(1.dp, ScribeRose.copy(alpha = 0.3f))
                     ) {
                         Text(
-                            text = cmd,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            color = if (selectedCommandTrigger == cmd) ScribeCobalt else ScribeTextPrimary
+                            text = "Error: $transformError",
+                            fontSize = 13.sp,
+                            color = ScribeRose,
+                            modifier = Modifier.padding(14.dp)
                         )
                     }
-                    Text(
-                        text = desc,
-                        fontSize = 12.sp,
-                        color = ScribeTextSecondary,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f).padding(start = 12.dp)
-                    )
-                }
-                if (i < quickTriggers.lastIndex) {
-                    HorizontalDivider(
-                        color = ScribeOutline,
-                        thickness = 0.5.dp,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(100.dp))
+        // ── 7. Studio Presets Shelf (Elevated Apple Workspace) ────────────────
+        if (transformResult == null && transformError == null) {
+            Spacer(modifier = Modifier.height(22.dp))
+
+            Text(
+                text = "STUDIO PRESETS",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.sp,
+                color = ScribeTextTertiary,
+                modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
+            )
+
+            val presets = listOf(
+                Triple("Executive Summary", "Condense thoughts for leadership & investors", "${currentPrefix}shorten"),
+                Triple("Grammar & Tone Polish", "Fix spelling, punctuation, and flow", "${currentPrefix}fix"),
+                Triple("Conversational & Warm", "Friendly phrasing for team chats & DMs", "${currentPrefix}casual")
+            )
+
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = ScribeSurface,
+                border = BorderStroke(0.5.dp, ScribeOutline),
+                shadowElevation = 0.5.dp
+            ) {
+                Column {
+                    presets.forEachIndexed { idx, (title, desc, trigger) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    selectedCommandTrigger = trigger
+                                    if (canvasText.isBlank()) {
+                                        canvasText = sampleDrafts[idx % sampleDrafts.size]
+                                    }
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = ScribeTextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = desc,
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = ScribeTextTertiary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        if (idx < presets.size - 1) {
+                            HorizontalDivider(
+                                thickness = 0.5.dp,
+                                color = ScribeOutline,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
