@@ -14,9 +14,11 @@ import androidx.core.view.WindowCompat
 // Crisp white typography, electric cobalt accents, specular hairline highlights.
 
 val ScribeBackground = Color.Transparent           // Background is handled by AuroraBackground
-val ScribeSurface = Color(0x30FFFFFF)              // 19% Frosted Glass Surface
-val ScribeSurfaceVariant = Color(0x1EFFFFFF)       // 12% Recessed Glass Input / Container
+val ScribeSurface = Color(0x38FFFFFF)              // 22% Frosted Glass Surface
+val ScribeSurfaceVariant = Color(0x24FFFFFF)       // 14% Recessed Glass Input / Container
 val ScribeSurfaceHighlight = Color(0x40FFFFFF)     // 25% Pressed State
+val ScribeBottomSheetContainer = Color(0xF8101633) // 97% Opaque Midnight Frosted Glass for BottomSheets
+val ScribeDialogContainer = Color(0xF8101633)      // 97% Opaque Midnight Frosted Glass for Dialogs
 val ScribeOutline = Color(0x3DFFFFFF)              // 24% Specular Frosted Hairline Border
 val ScribeOutlineAccent = Color(0x8060A5FA)        // Sapphire Glass Focus Ring
 

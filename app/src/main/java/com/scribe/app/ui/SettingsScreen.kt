@@ -398,14 +398,12 @@ fun SettingsScreen(navController: NavController? = null) {
                 SectionHeader(title = "MODEL SELECTION", icon = Icons.Outlined.Psychology)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(1.dp, ScribeOutline),
-                    shadowElevation = 1.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         when (providerType) {
                             "openrouter" -> {
                                 Text(
@@ -535,14 +533,12 @@ fun SettingsScreen(navController: NavController? = null) {
                 SectionHeader(title = "ACTIVATION & TRIGGER", icon = Icons.Outlined.Keyboard)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(1.dp, ScribeOutline),
-                    shadowElevation = 1.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -624,14 +620,12 @@ fun SettingsScreen(navController: NavController? = null) {
                 SectionHeader(title = "INFERENCE TONE", icon = Icons.Outlined.Tune)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(1.dp, ScribeOutline),
-                    shadowElevation = 1.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -685,14 +679,12 @@ fun SettingsScreen(navController: NavController? = null) {
                 SectionHeader(title = "DATA & BACKUP", icon = Icons.Outlined.Security)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(1.dp, ScribeOutline),
-                    shadowElevation = 1.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Text(
                             text = "Configuration Backup",
                             fontWeight = FontWeight.Bold,
@@ -774,14 +766,12 @@ fun SettingsScreen(navController: NavController? = null) {
                 SectionHeader(title = "SYSTEM ARCHITECTURE", icon = Icons.Outlined.Shield)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = ScribeSurface,
-                    border = BorderStroke(1.dp, ScribeOutline),
-                    shadowElevation = 1.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ScribePulsePip(color = ScribeEmerald)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -829,10 +819,18 @@ fun SettingsScreen(navController: NavController? = null) {
                 keyTestResult = null
             },
             sheetState = sheetState,
-            containerColor = ScribeSurface,
-            contentColor = ScribeTextPrimary,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            dragHandle = { BottomSheetDefaults.DragHandle(color = ScribeOutline) }
+            containerColor = ScribeBottomSheetContainer,
+            contentColor = ScribeGlassTextPrimary,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .size(width = 36.dp, height = 4.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.35f))
+                )
+            }
         ) {
             Column(
                 modifier = Modifier
@@ -840,9 +838,9 @@ fun SettingsScreen(navController: NavController? = null) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
             ) {
-                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeTextPrimary)
+                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeGlassTextPrimary)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeTextSecondary)
+                Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeGlassTextSecondary)
 
                 Spacer(modifier = Modifier.height(18.dp))
 
@@ -855,14 +853,17 @@ fun SettingsScreen(navController: NavController? = null) {
                     label = { Text("API Key Token (e.g. sk-or-...)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ScribeCobalt,
-                        unfocusedBorderColor = ScribeOutline,
-                        focusedContainerColor = ScribeSurfaceVariant,
-                        unfocusedContainerColor = ScribeSurfaceVariant,
-                        focusedTextColor = ScribeTextPrimary,
-                        unfocusedTextColor = ScribeTextPrimary
+                        focusedBorderColor = ScribeGlassCobalt,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.25f),
+                        focusedContainerColor = Color(0xFF171E42),
+                        unfocusedContainerColor = Color(0xFF171E42),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedLabelColor = ScribeGlassCobalt,
+                        unfocusedLabelColor = ScribeGlassTextSecondary,
+                        cursorColor = ScribeGlassCobalt
                     )
                 )
 
@@ -870,7 +871,7 @@ fun SettingsScreen(navController: NavController? = null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = msg,
-                        color = if (msg.startsWith("Valid")) ScribeEmerald else ScribeRose,
+                        color = if (msg.startsWith("Valid")) ScribeGlassEmerald else ScribeGlassRose,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -888,12 +889,12 @@ fun SettingsScreen(navController: NavController? = null) {
                             newKeyText = ""
                             keyTestResult = null
                         },
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, ScribeOutline),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ScribeTextPrimary)
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ScribeGlassTextPrimary)
                     ) {
-                        Text("Cancel")
+                        Text("Cancel", fontWeight = FontWeight.SemiBold)
                     }
                     Button(
                         onClick = {
@@ -932,14 +933,19 @@ fun SettingsScreen(navController: NavController? = null) {
                             }
                         },
                         enabled = newKeyText.isNotBlank() && !isTestingKey,
-                        modifier = Modifier.weight(1f).height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ScribeTextPrimary, contentColor = Color.White)
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ScribeGlassCobalt,
+                            contentColor = Color.White,
+                            disabledContainerColor = ScribeGlassCobalt.copy(alpha = 0.35f),
+                            disabledContentColor = Color.White.copy(alpha = 0.5f)
+                        )
                     ) {
                         if (isTestingKey) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Verifying...")
+                            Text("Verifying...", fontWeight = FontWeight.Bold)
                         } else {
                             Text("Vault Key", fontWeight = FontWeight.Bold)
                         }
@@ -963,10 +969,10 @@ fun SettingsScreen(navController: NavController? = null) {
     if (showImportDialog) {
         AlertDialog(
             onDismissRequest = { showImportDialog = false },
-            title = { Text(text = "Import JSON Backup", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ScribeTextPrimary) },
+            title = { Text(text = "Import JSON Backup", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ScribeGlassTextPrimary) },
             text = {
                 Column {
-                    Text(text = "Paste your exported JSON configuration below:", fontSize = 13.sp, color = ScribeTextSecondary)
+                    Text(text = "Paste your exported JSON configuration below:", fontSize = 13.sp, color = ScribeGlassTextSecondary)
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = importJsonText,
@@ -974,22 +980,22 @@ fun SettingsScreen(navController: NavController? = null) {
                             importJsonText = it
                             importError = null
                         },
-                        placeholder = { Text("{\n  \"custom_commands\": [...]\n}", color = ScribeTextTertiary) },
+                        placeholder = { Text("{\n  \"custom_commands\": [...]\n}", color = ScribeGlassTextTertiary) },
                         maxLines = 6,
                         modifier = Modifier.fillMaxWidth().height(140.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ScribeCobalt,
-                            unfocusedBorderColor = ScribeOutline,
-                            focusedContainerColor = ScribeSurfaceVariant,
-                            unfocusedContainerColor = ScribeSurfaceVariant,
-                            focusedTextColor = ScribeTextPrimary,
-                            unfocusedTextColor = ScribeTextPrimary
+                            focusedBorderColor = ScribeGlassCobalt,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.25f),
+                            focusedContainerColor = Color(0xFF171E42),
+                            unfocusedContainerColor = Color(0xFF171E42),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
                         )
                     )
                     importError?.let { msg ->
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(text = msg, color = ScribeRose, fontSize = 12.sp)
+                        Text(text = msg, color = ScribeGlassRose, fontSize = 12.sp)
                     }
                 }
             },
@@ -1006,7 +1012,7 @@ fun SettingsScreen(navController: NavController? = null) {
                             importError = "Invalid JSON: ${result.exceptionOrNull()?.message?.take(30)}"
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ScribeTextPrimary, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = ScribeGlassCobalt, contentColor = Color.White),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Restore", fontWeight = FontWeight.Bold)
@@ -1015,12 +1021,12 @@ fun SettingsScreen(navController: NavController? = null) {
             dismissButton = {
                 TextButton(
                     onClick = { showImportDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextTertiary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextTertiary)
                 ) {
                     Text("Cancel")
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = ScribeDialogContainer,
             shape = RoundedCornerShape(18.dp)
         )
     }
@@ -1029,12 +1035,12 @@ fun SettingsScreen(navController: NavController? = null) {
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text(text = "Reset Default Commands?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ScribeTextPrimary) },
+            title = { Text(text = "Reset Default Commands?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = ScribeGlassTextPrimary) },
             text = {
                 Text(
                     text = "Restores all 9 original built-in shortcuts and clears prompt overrides. Your custom commands remain untouched.",
                     fontSize = 13.sp,
-                    color = ScribeTextSecondary,
+                    color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
                 )
             },
@@ -1045,7 +1051,7 @@ fun SettingsScreen(navController: NavController? = null) {
                         Toast.makeText(context, "Default commands restored", Toast.LENGTH_SHORT).show()
                         showResetDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ScribeRose, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = ScribeGlassRose, contentColor = Color.White),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Reset Defaults", fontWeight = FontWeight.Bold)
@@ -1054,12 +1060,12 @@ fun SettingsScreen(navController: NavController? = null) {
             dismissButton = {
                 TextButton(
                     onClick = { showResetDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeTextTertiary)
+                    colors = ButtonDefaults.textButtonColors(contentColor = ScribeGlassTextTertiary)
                 ) {
                     Text("Cancel")
                 }
             },
-            containerColor = ScribeSurface,
+            containerColor = ScribeDialogContainer,
             shape = RoundedCornerShape(18.dp)
         )
     }
@@ -1093,6 +1099,7 @@ private fun WarmProviderCard(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
+            .background(Color(0x660A0F2E))
             .background(
                 if (selected) ScribeGlassCobalt.copy(alpha = 0.25f)
                 else Color.White.copy(alpha = 0.12f)
@@ -1299,15 +1306,15 @@ private fun UnifiedKeyRow(
 private fun WarmLinkChip(label: String, url: String, uriHandler: UriHandler) {
     Surface(
         onClick = { uriHandler.openUri(url) },
-        shape = RoundedCornerShape(8.dp),
-        color = ScribeSurfaceVariant,
-        border = BorderStroke(1.dp, ScribeOutline)
+        shape = RoundedCornerShape(10.dp),
+        color = Color.White.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.20f))
     ) {
         Text(
             text = "$label ↗",
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
-            color = ScribeCobalt,
+            color = ScribeGlassCobalt,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }

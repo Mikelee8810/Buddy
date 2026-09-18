@@ -85,8 +85,12 @@ fun AuroraBackground(
 
 fun Modifier.glassCard(
     cornerRadius: Dp = 24.dp,
-    fillAlpha: Float = 0.19f
+    fillAlpha: Float = 0.22f
 ): Modifier = this
+    .background(
+        color = Color(0x660A0F2E),
+        shape = RoundedCornerShape(cornerRadius)
+    )
     .background(
         brush = Brush.linearGradient(
             colors = listOf(
@@ -101,7 +105,7 @@ fun Modifier.glassCard(
         brush = Brush.verticalGradient(
             colors = listOf(
                 Color.White.copy(alpha = 0.54f),   // specular top highlight
-                Color.White.copy(alpha = 0.07f)    // fades to near-invisible bottom
+                Color.White.copy(alpha = 0.08f)    // fades to near-invisible bottom
             )
         ),
         shape = RoundedCornerShape(cornerRadius)

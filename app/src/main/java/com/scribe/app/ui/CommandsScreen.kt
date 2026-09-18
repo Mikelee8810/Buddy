@@ -360,7 +360,7 @@ fun CommandsScreen() {
         ModalBottomSheet(
             onDismissRequest = { selectedCommandForDetail = null },
             sheetState = sheetState,
-            containerColor = ScribeSurface,
+            containerColor = ScribeBottomSheetContainer,
             contentColor = ScribeTextPrimary,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = {
@@ -369,7 +369,7 @@ fun CommandsScreen() {
                         .padding(vertical = 12.dp)
                         .size(width = 36.dp, height = 4.dp)
                         .clip(CircleShape)
-                        .background(ScribeOutline)
+                        .background(Color.White.copy(alpha = 0.35f))
                 )
             }
         ) {
@@ -524,7 +524,7 @@ fun CommandsScreen() {
         ModalBottomSheet(
             onDismissRequest = { showEditSheet = false },
             sheetState = sheetState,
-            containerColor = ScribeSurface,
+            containerColor = ScribeBottomSheetContainer,
             contentColor = ScribeTextPrimary,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = {
@@ -533,7 +533,7 @@ fun CommandsScreen() {
                         .padding(vertical = 12.dp)
                         .size(width = 36.dp, height = 4.dp)
                         .clip(CircleShape)
-                        .background(ScribeOutline)
+                        .background(Color.White.copy(alpha = 0.35f))
                 )
             }
         ) {
