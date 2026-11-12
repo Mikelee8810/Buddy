@@ -81,7 +81,7 @@ fun ApiUsageScreen(navController: NavController, keyIndex: Int) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Usage Analytics", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                title = { Text("Key usage", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

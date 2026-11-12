@@ -1,7 +1,8 @@
 package com.scribe.app.ui.theme
 
 import android.app.Activity
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -56,7 +57,11 @@ private val ScribeGlassColorScheme = darkColorScheme(
     background = Color(0xFF0A0F2E),
     surface = Color(0xFF101633),
     surfaceVariant = Color(0xFF171E42),
+    surfaceContainerLowest = Color(0xFF070B24),
+    surfaceContainerLow = Color(0xFF0D1330),
+    surfaceContainer = Color(0xFF141A3B),
     surfaceContainerHigh = Color(0xFF1F2856),
+    surfaceContainerHighest = Color(0xFF283265),
     onBackground = ScribeTextPrimary,
     onSurface = ScribeTextPrimary,
     onSurfaceVariant = ScribeTextSecondary,
@@ -97,8 +102,9 @@ fun ScribeTheme(
         }
     }
 
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
+        motionScheme = MotionScheme.expressive(),
         content = content
     )
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +51,7 @@ import com.scribe.app.manager.KeyManager
 import com.scribe.app.model.Command
 import com.scribe.app.model.HistoryItem
 import com.scribe.app.ui.components.ScribeBrandHeader
+import com.scribe.app.ui.components.TipsCard
 import com.scribe.app.ui.components.glassCard
 import com.scribe.app.ui.theme.*
 import kotlinx.coroutines.delay
@@ -101,6 +103,11 @@ fun HubScreen(navController: NavController? = null) {
     val keyManager = remember { KeyManager(context) }
 
     var isServiceEnabled by remember { mutableStateOf(checkServiceEnabled(context)) }
+    // Re-check whenever the user comes back (e.g. after turning Scribe on in Android settings)
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        isServiceEnabled = checkServiceEnabled(context)
+        onPauseOrDispose { }
+    }
     var keyCount by remember { mutableIntStateOf(keyManager.getKeys().size) }
     var commands by remember { mutableStateOf(commandManager.getCommands()) }
     var recentHistory by remember { mutableStateOf(historyManager.getHistory().take(3)) }
@@ -227,7 +234,7 @@ fun HubScreen(navController: NavController? = null) {
             // ── 1. Top Brand Header ───────────────────────────────────────────
             ScribeBrandHeader(
                 title = "Scribe",
-                subtitle = "Ambient Copilot",
+                subtitle = "Your writing helper, everywhere",
                 trailingContent = {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -239,7 +246,7 @@ fun HubScreen(navController: NavController? = null) {
                                 showResetDialog = true
                             },
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
                                 .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape)
@@ -317,13 +324,13 @@ fun HubScreen(navController: NavController? = null) {
                         )
                         Column {
                             Text(
-                                text = if (isServiceEnabled) "Daemon Active & Running" else "Daemon Disabled",
+                                text = if (isServiceEnabled) "Scribe is on" else "Scribe is off",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = ScribeGlassTextPrimary
                             )
                             Text(
-                                text = if (isServiceEnabled) "Ambient in all apps" else "Tap to enable in Accessibility",
+                                text = if (isServiceEnabled) "Works in every app" else "Tap to turn it on",
                                 fontSize = 11.sp,
                                 color = if (isServiceEnabled) ScribeGlassTextSecondary else ScribeGlassRose.copy(alpha = 0.85f)
                             )
@@ -404,7 +411,7 @@ fun HubScreen(navController: NavController? = null) {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(
                             onClick = { searchQuery = "" },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
@@ -484,11 +491,21 @@ fun HubScreen(navController: NavController? = null) {
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
                 ) {
+                    // Tips scroll away with the list instead of taking space from it
+                    if (searchQuery.isBlank()) {
+                        item {
+                            TipsCard(
+                                prefix = currentPrefix,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+
                     // Snippets Header
                     item {
                         Text(
-                            text = "ACTIVE SHORTCUTS (${filteredCommands.size})",
-                            fontSize = 10.sp,
+                            text = "YOUR COMMANDS (${filteredCommands.size})",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.1.sp,
                             color = ScribeGlassTextTertiary,
@@ -505,7 +522,7 @@ fun HubScreen(navController: NavController? = null) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if (searchQuery.isNotBlank()) "No shortcuts matching \"$searchQuery\"" else "No snippets found",
+                                    text = if (searchQuery.isNotBlank()) "Nothing matches \"$searchQuery\". Try a shorter word." else "No commands here yet. Tap New to make one.",
                                     fontSize = 13.sp,
                                     color = ScribeGlassTextTertiary
                                 )
@@ -546,7 +563,7 @@ fun HubScreen(navController: NavController? = null) {
                             ) {
                                 Text(
                                     text = "RECENT REWRITES",
-                                    fontSize = 10.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.1.sp,
                                     color = ScribeTextTertiary
@@ -609,6 +626,7 @@ fun HubScreen(navController: NavController? = null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 36.dp)
             ) {
@@ -663,7 +681,7 @@ fun HubScreen(navController: NavController? = null) {
 
                 Text(
                     text = if (cmd.isTextReplacer) "REPLACEMENT CONTENT" else "AI INSTRUCTION PROMPT",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeGlassTextTertiary
@@ -738,7 +756,7 @@ fun HubScreen(navController: NavController? = null) {
                             showDeleteConfirmDialog = cmd
                         },
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(ScribeRose.copy(alpha = 0.1f))
                     ) {
@@ -747,6 +765,26 @@ fun HubScreen(navController: NavController? = null) {
                             contentDescription = "Delete",
                             tint = ScribeRose,
                             modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                if (cmd.isBuiltIn && commandManager.isModifiedBuiltIn(cmd.trigger)) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            commandManager.resetBuiltInCommand(cmd.trigger)
+                            commands = commandManager.getCommands()
+                            selectedCommandForDetail = null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Reset to original prompt",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ScribeTextSecondary
                         )
                     }
                 }
@@ -775,11 +813,13 @@ fun HubScreen(navController: NavController? = null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 36.dp)
             ) {
                 Text(
-                    text = if (isCreatingNew) "New Snippet" else "Edit Snippet",
+                    text = if (isCreatingNew) "New Command" else "Edit Command",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = ScribeTextPrimary
@@ -860,7 +900,7 @@ fun HubScreen(navController: NavController? = null) {
                 // Trigger Input
                 Text(
                     text = "TRIGGER SHORTCUT",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeTextTertiary
@@ -901,7 +941,7 @@ fun HubScreen(navController: NavController? = null) {
                 // Prompt Input
                 Text(
                     text = if (editingIsReplacer) "REPLACEMENT TEXT" else "PROMPT INSTRUCTION",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeTextTertiary
@@ -921,7 +961,7 @@ fun HubScreen(navController: NavController? = null) {
                         )
                     },
                     minLines = 3,
-                    maxLines = 6,
+                    maxLines = 12,
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = ScribeCobalt,
@@ -941,7 +981,7 @@ fun HubScreen(navController: NavController? = null) {
                 Column {
                     Text(
                         text = "DYNAMIC TOKENS",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp,
                         color = ScribeTextTertiary
@@ -957,7 +997,9 @@ fun HubScreen(navController: NavController? = null) {
                             "{date}" to "Current Date",
                             "{time}" to "Current Time",
                             "{clipboard}" to "Clipboard Text",
-                            "{selection}" to "Input Text"
+                            "{selection}" to "Input Text",
+                            "{screen}" to "Screen Text",
+                            "{app}" to "Current App"
                         )
                         tokens.forEach { (token, _) ->
                             Surface(
@@ -1068,7 +1110,7 @@ fun HubScreen(navController: NavController? = null) {
                         modifier = Modifier.weight(1.5f).height(48.dp)
                     ) {
                         Text(
-                            text = if (isCreatingNew) "Create Snippet" else "Save Changes",
+                            text = if (isCreatingNew) "Create Command" else "Save Changes",
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F1535)
                         )
@@ -1092,7 +1134,7 @@ fun HubScreen(navController: NavController? = null) {
             },
             text = {
                 Text(
-                    text = "Are you sure you want to remove this snippet? This action cannot be undone.",
+                    text = "Are you sure you want to delete this command? You can't undo this.",
                     fontSize = 13.sp,
                     color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
@@ -1135,7 +1177,7 @@ fun HubScreen(navController: NavController? = null) {
             onDismissRequest = { showResetDialog = false },
             title = {
                 Text(
-                    text = "Reset Built-in Snippets?",
+                    text = "Reset built-in commands?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = ScribeGlassTextPrimary
@@ -1143,7 +1185,7 @@ fun HubScreen(navController: NavController? = null) {
             },
             text = {
                 Text(
-                    text = "This will restore the original built-in shortcuts while keeping your custom ones intact.",
+                    text = "This will bring back the original built-in commands. Your own commands stay.",
                     fontSize = 13.sp,
                     color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
@@ -1196,6 +1238,19 @@ private fun HubCommandRow(
         "casual" -> "Conversational & Friendly"
         "emoji" -> "Add Expressive Emojis"
         "reply" -> "Contextual Reply"
+        "simplify" -> "Say It Simply"
+        "bullets" -> "Bullet Points"
+        "tldr" -> "TL;DR"
+        "email" -> "Make It an Email"
+        "decline" -> "Say No Nicely"
+        "apology" -> "Apologize"
+        "confident" -> "Sound Confident"
+        "soften" -> "Soften It"
+        "todo" -> "Action Items"
+        "title" -> "Write a Title"
+        "hashtags" -> "Add Hashtags"
+        "explain" -> "Explain This"
+        "ramble" -> "Clean Up Dictation"
         "undo" -> "Restore Original Text"
         else -> command.trigger.removePrefix("/")
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
@@ -1212,6 +1267,19 @@ private fun HubCommandRow(
             "casual" -> "Warm, friendly, everyday conversational tone"
             "emoji" -> "Tastefully sprinkle fitting emojis"
             "reply" -> "Draft a natural response to the message"
+            "simplify" -> "Plain words, short sentences"
+            "bullets" -> "Turn a wall of text into a list"
+            "tldr" -> "One-line summary"
+            "email" -> "Greeting, body, sign-off"
+            "decline" -> "Kind but firm no"
+            "apology" -> "Sincere, short, no groveling"
+            "confident" -> "Cut the hedging and sorries"
+            "soften" -> "Gentler wording, same message"
+            "todo" -> "Pull out a to-do checklist"
+            "title" -> "Catchy title or subject line"
+            "hashtags" -> "3–6 fitting hashtags"
+            "explain" -> "What it means, in plain words"
+            "ramble" -> "Turns rambling speech into clean text"
             "undo" -> "Revert the previous text transformation"
             else -> command.prompt.take(80)
         }
@@ -1272,7 +1340,7 @@ private fun HubCommandRow(
             ) {
                 Text(
                     text = "EXPAND",
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = ScribeGlassTextTertiary
                 )
@@ -1325,7 +1393,7 @@ private fun RecentRewriteCard(
                             text = item.commandTrigger,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             color = ScribeGlassCobalt
                         )
                     }
@@ -1352,7 +1420,7 @@ private fun RecentRewriteCard(
                 onClick = onCopy,
                 modifier = Modifier
                     .padding(start = 8.dp)
-                    .size(34.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.14f))
                     .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)

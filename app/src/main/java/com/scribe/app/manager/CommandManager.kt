@@ -16,6 +16,7 @@ class CommandManager(context: Context) {
     companion object {
         const val DEFAULT_PREFIX = "/"
         const val PREF_TRIGGER_PREFIX = "trigger_prefix"
+        const val RAMBLE_PROMPT = "You are cleaning up spoken dictation. Remove filler words (um, uh, like, you know), false starts, and repeated words. When the speaker corrects themselves, keep only the final intended version. Fix punctuation, capitalization, and obvious speech-to-text mistakes. Keep the speaker's own words, tone, and meaning; do not add new ideas or answer questions in the text. Keep the original language. Return only the cleaned text."
     }
 
     // Built-in command names (without prefix) and their prompts
@@ -27,7 +28,20 @@ class CommandManager(context: Context) {
         "formal" to "Rewrite in a formal, professional tone. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the rewritten text.",
         "casual" to "Rewrite in a casual, friendly tone. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the rewritten text.",
         "emoji" to "Add relevant emojis throughout. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the text with emojis added.",
-        "reply" to "Generate a contextual reply to this message. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the reply.",
+        "reply" to "The user is typing in the app: {app}. Match the tone people normally use there (casual for texting apps, more polished for email or work apps). Here is what is currently visible on the screen, which may include the conversation being replied to:\n---\n{screen}\n---\nThe user has typed a rough idea of their reply. Write the reply they want to send, fitting the conversation above. If they typed nothing useful, write a natural reply to the latest message. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the reply.",
+        "simplify" to "Rewrite in plain, simple English that a 12-year-old could follow. Use short sentences and everyday words. Keep every important point. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "bullets" to "Turn this into a clean bulleted list. One idea per bullet, short and scannable. Keep all the key information. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "tldr" to "Summarize this in one or two sentences that capture the main point. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "email" to "Turn this into a clear, polite email with a greeting, a short body, and a sign-off. Keep the sender's intent and details. Do not invent facts, names, or dates. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "decline" to "Rewrite this as a kind but firm way to say no. Be warm and brief, and don't over-apologize or make excuses that weren't given. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "apology" to "Rewrite this as a sincere, short apology that takes responsibility without groveling. Keep any facts that were given. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "confident" to "Rewrite this to sound confident and direct. Remove hedging words like 'just', 'maybe', 'I think', and 'sorry to bother'. Keep it polite. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "soften" to "Rewrite this to sound gentler and less harsh, without losing the message. Good for sensitive conversations. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "todo" to "Pull out every action item from this text as a checklist, one per line starting with '- [ ]'. Include who and when if mentioned. If there are none, return the text unchanged. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "title" to "Write a short, catchy title or subject line for this text. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "hashtags" to "Add 3 to 6 relevant hashtags at the end of this text. Keep the text itself unchanged. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "explain" to "Explain what this text means in plain words, as if to someone new to the topic. Keep it short. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "ramble" to RAMBLE_PROMPT,
         "undo" to "Undo the last replacement and restore the original text."
     )
 
@@ -109,6 +123,14 @@ class CommandManager(context: Context) {
                     Command("$prefix$name", prompt, true)
                 }
             }
+    }
+
+    /** The command used to clean up voice dictation. Editable like any built-in. */
+    fun getRambleCommand(): Command {
+        val prefix = getTriggerPrefix()
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        val prompt = overrides.optJSONObject("ramble")?.optString("prompt", RAMBLE_PROMPT) ?: RAMBLE_PROMPT
+        return Command("${prefix}ramble", prompt, true)
     }
 
     fun getCommands(): List<Command> {
@@ -230,6 +252,30 @@ class CommandManager(context: Context) {
         }
     }
 
+    /** Built-in name (e.g. "fix") for a trigger, or null if it's a custom command. */
+    private fun builtInNameFor(trigger: String): String? {
+        val prefix = getTriggerPrefix()
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        return builtInDefinitions.firstOrNull { (name, _) ->
+            val current = overrides.optJSONObject(name)?.optString("trigger", "$prefix$name") ?: "$prefix$name"
+            current == trigger
+        }?.first
+    }
+
+    /** True when a built-in command's prompt or trigger was changed by the user. */
+    fun isModifiedBuiltIn(trigger: String): Boolean {
+        val name = builtInNameFor(trigger) ?: return false
+        return JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}").has(name)
+    }
+
+    /** Put one built-in command back to its original trigger and prompt. */
+    fun resetBuiltInCommand(trigger: String) {
+        val name = builtInNameFor(trigger) ?: return
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        overrides.remove(name)
+        prefs.edit().putString("builtin_overrides", overrides.toString()).apply()
+    }
+
     fun resetBuiltInCommands() {
         prefs.edit()
             .remove("builtin_overrides")
@@ -280,7 +326,7 @@ class CommandManager(context: Context) {
     /**
      * Resolves dynamic template variables such as {date}, {time}, {clipboard}, {selection}, {input}
      */
-    fun resolveVariables(template: String, selection: String = "", clipboardText: String = ""): String {
+    fun resolveVariables(template: String, selection: String = "", clipboardText: String = "", screenText: String = "", appName: String = ""): String {
         val now = Date()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -294,5 +340,7 @@ class CommandManager(context: Context) {
             .replace("{clipboard}", clipboardText, ignoreCase = true)
             .replace("{selection}", selection, ignoreCase = true)
             .replace("{input}", selection, ignoreCase = true)
+            .replace("{screen}", screenText, ignoreCase = true)
+            .replace("{app}", appName, ignoreCase = true)
     }
 }

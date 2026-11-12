@@ -4,6 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -43,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.scribe.app.api.ScribeApiClient
 import com.scribe.app.manager.CommandManager
+import com.scribe.app.keepalive.KeepAlive
+import rikka.shizuku.Shizuku
 import com.scribe.app.manager.HistoryManager
 import com.scribe.app.manager.KeyManager
 import com.scribe.app.manager.UsageManager
@@ -99,6 +105,58 @@ fun SettingsScreen(navController: NavController? = null) {
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
 
+    var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_hidden", false)) }
+
+    // Offline backup (Gemini Nano on the phone)
+    var offlineFallback by remember { mutableStateOf(prefs.getBoolean("offline_fallback", true)) }
+    var onDeviceStatus by remember { mutableStateOf("Checking…") }
+    LaunchedEffect(Unit) { onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel() }
+
+    // Personal style
+    var matchMyStyle by remember { mutableStateOf(prefs.getBoolean("match_my_style", true)) }
+    var aboutMe by remember { mutableStateOf(prefs.getString("about_me", "") ?: "") }
+
+    // Keep-alive (Shizuku)
+    var selfHealReady by remember { mutableStateOf(KeepAlive.canSelfHeal(context)) }
+    var keepAliveMsg by remember { mutableStateOf<String?>(null) }
+    var keepAliveBusy by remember { mutableStateOf(false) }
+    fun runKeepAliveSetup() {
+        keepAliveBusy = true
+        scope.launch {
+            val result = KeepAlive.setUpWithShizuku(context)
+            keepAliveMsg = result.fold({ it }, { it.message })
+            selfHealReady = KeepAlive.canSelfHeal(context)
+            keepAliveBusy = false
+        }
+    }
+    DisposableEffect(Unit) {
+        val listener = Shizuku.OnRequestPermissionResultListener { code, result ->
+            if (code == KeepAlive.SHIZUKU_REQUEST_CODE) {
+                if (result == PackageManager.PERMISSION_GRANTED) runKeepAliveSetup()
+                else keepAliveMsg = "Shizuku permission was denied."
+            }
+        }
+        try { Shizuku.addRequestPermissionResultListener(listener) } catch (_: Throwable) {}
+        onDispose { try { Shizuku.removeRequestPermissionResultListener(listener) } catch (_: Throwable) {} }
+    }
+
+    // Voice dictation bubble
+    var voiceEnabled by remember {
+        mutableStateOf(
+            prefs.getBoolean("voice_bubble_enabled", false) &&
+                context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        voiceEnabled = granted
+        prefs.edit().putBoolean("voice_bubble_enabled", granted).apply()
+        if (!granted) {
+            Toast.makeText(context, "Scribe needs the mic to hear you. You can allow it in system settings.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     // Trigger Prefix
     var triggerPrefix by remember { mutableStateOf(commandManager.getTriggerPrefix()) }
     var prefixError by remember { mutableStateOf<String?>(null) }
@@ -123,7 +181,7 @@ fun SettingsScreen(navController: NavController? = null) {
 
     fun pingProvider() {
         if (keys.isEmpty()) {
-            pingStatus = "Vault is empty"
+            pingStatus = "No API keys yet"
             return
         }
         val targetKey = keys.first()
@@ -164,15 +222,15 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Brand Header ──────────────────────────────────────────────────────
         item {
             ScribeBrandHeader(
-                title = "Engine",
-                subtitle = "Control Center & Vault"
+                title = "Settings",
+                subtitle = "Keys, AI and preferences"
             )
         }
 
         // ── Section 1: Key Vault Summary ──────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "KEY VAULT & ROTATION", icon = Icons.Outlined.Key)
+                SectionHeader(title = "API KEYS", icon = Icons.Outlined.Key)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -334,7 +392,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 2: AI Provider Selector ───────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "AI PROVIDER ENGINE", icon = Icons.Outlined.CloudQueue)
+                SectionHeader(title = "AI PROVIDER", icon = Icons.Outlined.CloudQueue)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -395,7 +453,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 3: Model Picker ───────────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "MODEL SELECTION", icon = Icons.Outlined.Psychology)
+                SectionHeader(title = "AI MODEL", icon = Icons.Outlined.Psychology)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -527,10 +585,136 @@ fun SettingsScreen(navController: NavController? = null) {
             }
         }
 
+        // ── Voice Dictation ───────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "VOICE DICTATION", icon = Icons.Outlined.Mic)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text(
+                                    text = "Mic bubble",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = ScribeTextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tap a text box, tap the mic, and just talk. Scribe drops the ums and cleans it up.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = voiceEnabled,
+                                onCheckedChange = { on ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    if (!on) {
+                                        voiceEnabled = false
+                                        prefs.edit().putBoolean("voice_bubble_enabled", false).apply()
+                                    } else if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                        voiceEnabled = true
+                                        prefs.edit().putBoolean("voice_bubble_enabled", true).apply()
+                                    } else {
+                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = ScribeCobalt,
+                                    checkedThumbColor = Color.White
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Want a different cleanup style? Edit the ${triggerPrefix}ramble command in the Hub.",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ScribeTextTertiary
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Sound Like Me ─────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "SOUND LIKE ME", icon = Icons.Outlined.Person)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Match my writing style", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Scribe learns from text you've typed before, so rewrites sound like you instead of a robot. Stays on your phone except when sent with a request.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = matchMyStyle,
+                                onCheckedChange = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    matchMyStyle = it
+                                    prefs.edit().putBoolean("match_my_style", it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text("About me", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "Optional. Your name, how you sign emails, words you love or hate.",
+                            fontSize = 12.sp,
+                            color = ScribeTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = aboutMe,
+                            onValueChange = {
+                                aboutMe = it.take(500)
+                                prefs.edit().putString("about_me", aboutMe).apply()
+                            },
+                            placeholder = { Text("e.g. I'm Mike. Sign emails \"Thanks, Mike\". Never say \"per my last email\".", color = ScribeTextTertiary) },
+                            minLines = 2,
+                            maxLines = 5,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = ScribeCobalt,
+                                unfocusedBorderColor = ScribeOutline,
+                                focusedContainerColor = ScribeSurfaceVariant,
+                                unfocusedContainerColor = ScribeSurfaceVariant,
+                                focusedTextColor = ScribeTextPrimary,
+                                unfocusedTextColor = ScribeTextPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+
         // ── Section 4: Activation Trigger ─────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "ACTIVATION & TRIGGER", icon = Icons.Outlined.Keyboard)
+                SectionHeader(title = "TRIGGER & TIPS", icon = Icons.Outlined.Keyboard)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -609,6 +793,124 @@ fun SettingsScreen(navController: NavController? = null) {
                                 color = ScribeEmerald
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Show tips", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Text("A quick how-to tip at the top of the Hub", fontSize = 12.sp, color = ScribeTextSecondary)
+                            }
+                            Switch(
+                                checked = showTips,
+                                onCheckedChange = {
+                                    showTips = it
+                                    prefs.edit().putBoolean("tips_hidden", !it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Keep Alive ────────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "KEEP SCRIBE ALIVE", icon = Icons.Outlined.Bolt)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Text(
+                            text = if (selfHealReady) "Protected" else "Not protected yet",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = if (selfHealReady) ScribeEmerald else ScribeTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (selfHealReady)
+                                "If Android switches Scribe off, it turns itself back on within 15 minutes, after a restart, or when you open the app."
+                            else
+                                "Android sometimes switches Scribe off in the background. Use Shizuku once and Scribe will switch itself back on automatically.",
+                            fontSize = 12.sp,
+                            color = ScribeTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                keepAliveMsg = null
+                                when {
+                                    !KeepAlive.isShizukuRunning() ->
+                                        keepAliveMsg = "Shizuku isn't running. Install the Shizuku app, start it, then tap again."
+                                    !KeepAlive.hasShizukuPermission() -> KeepAlive.requestShizukuPermission()
+                                    else -> runKeepAliveSetup()
+                                }
+                            },
+                            enabled = !keepAliveBusy,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = ScribeCobalt, contentColor = Color.White),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Text(
+                                if (keepAliveBusy) "Setting up…" else if (selfHealReady) "Run setup again" else "Set up with Shizuku",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        keepAliveMsg?.let {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(it, fontSize = 12.sp, color = ScribeTextSecondary)
+                        }
+                        if (!selfHealReady) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            WarmLinkChip("Get Shizuku", "https://shizuku.rikka.app/download/", uriHandler)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Offline Backup ────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "OFFLINE BACKUP", icon = Icons.Outlined.CloudOff)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Use the phone's own AI as a backup", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "When there's no signal, no key, or your provider fails, Scribe tries Gemini Nano on your phone. Nothing leaves the device.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = offlineFallback,
+                                onCheckedChange = {
+                                    offlineFallback = it
+                                    prefs.edit().putBoolean("offline_fallback", it).apply()
+                                    if (it) scope.launch {
+                                        com.scribe.app.api.OnDeviceAi.downloadIfNeeded()
+                                        onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("This phone: $onDeviceStatus", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = ScribeTextTertiary)
                     }
                 }
             }
@@ -617,7 +919,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 5: Tone & Temperature ─────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "INFERENCE TONE", icon = Icons.Outlined.Tune)
+                SectionHeader(title = "CREATIVITY", icon = Icons.Outlined.Tune)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -676,7 +978,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 6: Data Portability & Backup ──────────────────────────────
         item {
             Column {
-                SectionHeader(title = "DATA & BACKUP", icon = Icons.Outlined.Security)
+                SectionHeader(title = "BACKUP & RESTORE", icon = Icons.Outlined.Security)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -706,10 +1008,17 @@ fun SettingsScreen(navController: NavController? = null) {
                             OutlinedButton(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    val json = commandManager.exportConfigJson()
+                                    // Full backup: commands plus API keys and all settings,
+                                    // so restoring on a fresh install needs nothing retyped.
+                                    val root = org.json.JSONObject(commandManager.exportConfigJson())
+                                    root.put("api_keys", org.json.JSONArray(keyManager.getKeys()))
+                                    val settingsObj = org.json.JSONObject()
+                                    prefs.all.forEach { (k, v) -> if (v != null && v !is Set<*>) settingsObj.put(k, v) }
+                                    root.put("settings", settingsObj)
+                                    val json = root.toString(2)
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Scribe Backup", json))
-                                    Toast.makeText(context, "Config copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Backup copied, including your API keys. Paste it somewhere private.", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp),
@@ -763,7 +1072,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 7: About Scribe ───────────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "SYSTEM ARCHITECTURE", icon = Icons.Outlined.Shield)
+                SectionHeader(title = "ABOUT", icon = Icons.Outlined.Shield)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -838,7 +1147,7 @@ fun SettingsScreen(navController: NavController? = null) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
             ) {
-                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeGlassTextPrimary)
+                Text(text = "Add an API key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeGlassTextPrimary)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeGlassTextSecondary)
 
@@ -947,7 +1256,7 @@ fun SettingsScreen(navController: NavController? = null) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Verifying...", fontWeight = FontWeight.Bold)
                         } else {
-                            Text("Vault Key", fontWeight = FontWeight.Bold)
+                            Text("Save key", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -1004,8 +1313,28 @@ fun SettingsScreen(navController: NavController? = null) {
                     onClick = {
                         val result = commandManager.importConfigJson(importJsonText.trim())
                         if (result.isSuccess) {
+                            try {
+                                val root = org.json.JSONObject(importJsonText.trim())
+                                root.optJSONArray("api_keys")?.let { arr ->
+                                    for (i in 0 until arr.length()) keyManager.addKey(arr.getString(i))
+                                }
+                                root.optJSONObject("settings")?.let { obj ->
+                                    val ed = prefs.edit()
+                                    obj.keys().forEach { k ->
+                                        when (val v = obj.get(k)) {
+                                            is Boolean -> ed.putBoolean(k, v)
+                                            is Int -> ed.putInt(k, v)
+                                            is Long -> ed.putLong(k, v)
+                                            is Double -> ed.putFloat(k, v.toFloat())
+                                            is String -> ed.putString(k, v)
+                                        }
+                                    }
+                                    ed.apply()
+                                }
+                                keys = keyManager.getKeys()
+                            } catch (_: Exception) {}
                             val count = result.getOrNull() ?: 0
-                            Toast.makeText(context, "Successfully restored $count custom commands!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Restored your commands, keys and settings. Reopen Settings to see them.", Toast.LENGTH_SHORT).show()
                             triggerPrefix = commandManager.getTriggerPrefix()
                             showImportDialog = false
                         } else {
@@ -1081,7 +1410,7 @@ private fun SectionHeader(title: String, icon: ImageVector) {
         Text(
             text = title,
             fontWeight = FontWeight.Bold,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             letterSpacing = 1.sp,
             color = ScribeGlassTextTertiary
         )
@@ -1164,7 +1493,7 @@ private fun WarmDropdown(
             onValueChange = {},
             readOnly = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = ScribeGlassCobalt,
@@ -1249,7 +1578,7 @@ private fun UnifiedKeyRow(
                     ) {
                         Text(
                             text = providerName.uppercase(),
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = ScribeGlassCobalt
@@ -1279,21 +1608,21 @@ private fun UnifiedKeyRow(
                         clipboard.setPrimaryClip(ClipData.newPlainText("Scribe Key", keyStr))
                         Toast.makeText(context, "Key copied", Toast.LENGTH_SHORT).show()
                     },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = ScribeGlassTextTertiary, modifier = Modifier.size(15.dp))
                 }
 
                 IconButton(
                     onClick = onUsageClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Outlined.BarChart, contentDescription = "Usage", tint = ScribeGlassCobalt, modifier = Modifier.size(16.dp))
                 }
 
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ScribeGlassRose, modifier = Modifier.size(15.dp))
                 }

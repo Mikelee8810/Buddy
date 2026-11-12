@@ -52,6 +52,19 @@ class HistoryManager(context: Context) {
         saveHistory(trimmed)
     }
 
+    /**
+     * Short samples of text the user wrote themselves (the input, not the
+     * AI output). Used to make rewrites sound like the user.
+     */
+    fun getStyleSamples(max: Int = 6): List<String> =
+        getHistory()
+            .filter { !it.commandTrigger.endsWith("ramble", ignoreCase = true) }
+            .map { it.originalText.trim() }
+            .filter { it.length in 20..600 }
+            .distinct()
+            .take(max)
+            .map { it.take(300) }
+
     fun deleteItem(id: String) {
         val currentHistory = getHistory().filter { it.id != id }
         saveHistory(currentHistory)
