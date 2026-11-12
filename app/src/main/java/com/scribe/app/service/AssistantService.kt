@@ -105,7 +105,7 @@ class AssistantService : AccessibilityService() {
         updateTriggers()
         voiceBubble = VoiceBubble(
             this,
-            onTranscript = { spoken -> handleDictation(spoken) },
+            onTranscript = { spoken, editMode -> if (editMode) handleVoiceEdit(spoken) else handleDictation(spoken) },
             onError = { msg -> serviceScope.launch { showToast(msg) } }
         )
     }
@@ -135,6 +135,39 @@ class AssistantService : AccessibilityService() {
             focusedField = null
             bubble.hide()
         }
+    }
+
+    /**
+     * "Talk to edit": the spoken words are an instruction for the text that's
+     * already in the field (or just the highlighted part).
+     */
+    private fun handleVoiceEdit(instruction: String) {
+        val field = focusedField ?: run {
+            serviceScope.launch { showToast("Tap a text box first") }
+            return
+        }
+        if (isProcessing) return
+        field.refresh()
+        val showingHint = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && field.isShowingHintText
+        val full = if (showingHint) "" else field.text?.toString().orEmpty()
+        if (full.isBlank()) {
+            serviceScope.launch { showToast("Nothing to edit yet. Tap the mic to dictate instead.") }
+            return
+        }
+        val start = field.textSelectionStart
+        val end = field.textSelectionEnd
+        val hasSelection = start in 0 until end && end <= full.length
+        val target = if (hasSelection) full.substring(start, end) else full
+        val before = if (hasSelection) full.substring(0, start) else ""
+        val after = if (hasSelection) full.substring(end) else ""
+        val cmd = Command(
+            "voice-edit",
+            "Edit the text according to this spoken instruction: \"$instruction\". Keep everything the instruction doesn't ask to change. Keep the original language. Return only the edited text, with no explanations.",
+            false
+        )
+        isProcessing = true
+        currentJob?.cancel()
+        processCommand(field, target, cmd, getClipboardContent(), keepPrefix = before, fallbackText = full, keepSuffix = after)
     }
 
     /** Clean up spoken text with the /ramble prompt and add it to the focused field. */
@@ -288,7 +321,8 @@ class AssistantService : AccessibilityService() {
         command: Command,
         clipboardText: String,
         keepPrefix: String = "",
-        fallbackText: String? = null
+        fallbackText: String? = null,
+        keepSuffix: String = ""
     ) {
         val prefs = applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val providerType = prefs.getString("provider_type", "openrouter") ?: "openrouter"
@@ -321,7 +355,7 @@ class AssistantService : AccessibilityService() {
 
         currentJob = serviceScope.launch {
             val originalText = text
-            val restoreText = fallbackText ?: (keepPrefix + text)
+            val restoreText = fallbackText ?: (keepPrefix + text + keepSuffix)
             var spinnerJob: Job? = null
             try {
                 withTimeout(90_000) {
@@ -350,7 +384,7 @@ class AssistantService : AccessibilityService() {
                             spinnerJob?.cancel(); spinnerJob = null
                             lastOriginalText = originalText
                             val generatedText = result.getOrThrow()
-                            replaceText(source, keepPrefix + generatedText)
+                            replaceText(source, keepPrefix + generatedText + keepSuffix)
                             historyManager.addHistoryItem(originalText, generatedText, command.trigger)
                             performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             succeeded = true

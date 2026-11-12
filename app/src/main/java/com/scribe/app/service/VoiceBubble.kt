@@ -25,7 +25,7 @@ import android.widget.TextView
  */
 class VoiceBubble(
     private val context: Context,
-    private val onTranscript: (String) -> Unit,
+    private val onTranscript: (text: String, editMode: Boolean) -> Unit,
     private val onError: (String) -> Unit
 ) {
     private val handler = Handler(Looper.getMainLooper())
@@ -37,6 +37,7 @@ class VoiceBubble(
 
     var isListening = false
         private set
+    private var editMode = false
 
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density + 0.5f).toInt()
@@ -48,7 +49,11 @@ class VoiceBubble(
             textSize = 20f
             gravity = Gravity.CENTER
             contentDescription = "Scribe voice input"
-            setOnClickListener { toggle() }
+            setOnClickListener { editMode = false; toggle() }
+            setOnLongClickListener {
+                if (!isListening) { editMode = true; start() }
+                true
+            }
         }
         styleBubble(bubble, listening = false)
         val size = dp(48)
@@ -86,10 +91,14 @@ class VoiceBubble(
     private fun styleBubble(v: TextView, listening: Boolean) {
         v.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
-            setColor(if (listening) 0xFFE5484D.toInt() else 0xE62F4FD8.toInt())
+            setColor(
+                if (!listening) 0xE62F4FD8.toInt()
+                else if (editMode) 0xFF8B5CF6.toInt()
+                else 0xFFE5484D.toInt()
+            )
             setStroke(dp(2), Color.WHITE)
         }
-        v.text = if (listening) "■" else "🎙"
+        v.text = if (!listening) "🎙" else if (editMode) "✎" else "■"
         v.setTextColor(Color.WHITE)
     }
 
@@ -142,7 +151,8 @@ class VoiceBubble(
         delivered = true
         val text = buffer.toString().trim()
         buffer.clear()
-        if (text.isNotEmpty()) onTranscript(text)
+        if (text.isNotEmpty()) onTranscript(text, editMode)
+        editMode = false
     }
 
     private val listener = object : RecognitionListener {
