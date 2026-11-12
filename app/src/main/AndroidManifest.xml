@@ -39,6 +39,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:excludeFromRecents="true" />
+
         <service
             android:name=".service.AssistantService"
             android:exported="true"
