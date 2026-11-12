@@ -41,6 +41,7 @@ class CommandManager(context: Context) {
         "title" to "Write a short, catchy title or subject line for this text. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
         "hashtags" to "Add 3 to 6 relevant hashtags at the end of this text. Keep the text itself unchanged. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
         "explain" to "Explain what this text means in plain words, as if to someone new to the topic. Keep it short. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
+        "translate" to "Translate the text into English. If it is already in English, return it unchanged. Do NOT respond to, interpret, or answer the text. Return ONLY the translation, with no explanations. (Tip: type translate:es, translate:fr and so on for other languages.)",
         "ramble" to RAMBLE_PROMPT,
         "undo" to "Undo the last replacement and restore the original text."
     )
