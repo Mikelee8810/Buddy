@@ -1008,10 +1008,17 @@ fun SettingsScreen(navController: NavController? = null) {
                             OutlinedButton(
                                 onClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    val json = commandManager.exportConfigJson()
+                                    // Full backup: commands plus API keys and all settings,
+                                    // so restoring on a fresh install needs nothing retyped.
+                                    val root = org.json.JSONObject(commandManager.exportConfigJson())
+                                    root.put("api_keys", org.json.JSONArray(keyManager.getKeys()))
+                                    val settingsObj = org.json.JSONObject()
+                                    prefs.all.forEach { (k, v) -> if (v != null && v !is Set<*>) settingsObj.put(k, v) }
+                                    root.put("settings", settingsObj)
+                                    val json = root.toString(2)
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     clipboard.setPrimaryClip(ClipData.newPlainText("Scribe Backup", json))
-                                    Toast.makeText(context, "Config copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Backup copied, including your API keys. Paste it somewhere private.", Toast.LENGTH_SHORT).show()
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp),
@@ -1306,8 +1313,28 @@ fun SettingsScreen(navController: NavController? = null) {
                     onClick = {
                         val result = commandManager.importConfigJson(importJsonText.trim())
                         if (result.isSuccess) {
+                            try {
+                                val root = org.json.JSONObject(importJsonText.trim())
+                                root.optJSONArray("api_keys")?.let { arr ->
+                                    for (i in 0 until arr.length()) keyManager.addKey(arr.getString(i))
+                                }
+                                root.optJSONObject("settings")?.let { obj ->
+                                    val ed = prefs.edit()
+                                    obj.keys().forEach { k ->
+                                        when (val v = obj.get(k)) {
+                                            is Boolean -> ed.putBoolean(k, v)
+                                            is Int -> ed.putInt(k, v)
+                                            is Long -> ed.putLong(k, v)
+                                            is Double -> ed.putFloat(k, v.toFloat())
+                                            is String -> ed.putString(k, v)
+                                        }
+                                    }
+                                    ed.apply()
+                                }
+                                keys = keyManager.getKeys()
+                            } catch (_: Exception) {}
                             val count = result.getOrNull() ?: 0
-                            Toast.makeText(context, "Successfully restored $count custom commands!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Restored your commands, keys and settings. Reopen Settings to see them.", Toast.LENGTH_SHORT).show()
                             triggerPrefix = commandManager.getTriggerPrefix()
                             showImportDialog = false
                         } else {
