@@ -29,6 +29,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Keep the same signing key across builds so new versions install
+      # over old ones. The key lives in GitHub's build cache, not the repo.
+      - name: Restore Signing Key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: scribe-signing-key-v1
+
+      - name: Create Signing Key (first build only)
+        run: |
+          if [ ! -f ~/.android/debug.keystore ]; then
+            mkdir -p ~/.android
+            keytool -genkeypair -keystore ~/.android/debug.keystore -alias androiddebugkey \
+              -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 36500 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
