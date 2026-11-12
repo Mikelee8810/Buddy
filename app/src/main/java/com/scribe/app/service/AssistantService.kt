@@ -118,23 +118,43 @@ class AssistantService : AccessibilityService() {
         return enabled && granted
     }
 
-    private fun handleFocusEvent(event: AccessibilityEvent) {
+    /**
+     * Show the mic bubble whenever the keyboard is open on an editable text
+     * box in another app; hide it otherwise. Checking the keyboard window is
+     * more reliable than focus events, which many apps don't send.
+     */
+    private fun refreshBubble() {
         val bubble = voiceBubble ?: return
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            if (!bubble.isListening) { focusedField = null; bubble.hide() }
-            return
-        }
-        val pkg = event.packageName?.toString()?.lowercase() ?: ""
-        val source = event.source
-        val usable = source != null && source.isEditable && !source.isPassword &&
+        if (bubble.isListening) return
+        if (!isVoiceEnabled()) { focusedField = null; bubble.hide(); return }
+        val imeOpen = try {
+            windows.any { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+        } catch (_: Exception) { false }
+        val field = if (imeOpen) findEditableFocus() else null
+        val pkg = field?.packageName?.toString()?.lowercase() ?: ""
+        val usable = field != null && !field.isPassword &&
             pkg != packageName && BLOCKED_PACKAGE_PATTERNS.none { pkg.contains(it) }
-        if (usable && isVoiceEnabled()) {
-            focusedField = source
+        if (usable) {
+            focusedField = field
             bubble.show()
-        } else if (!bubble.isListening) {
+        } else {
             focusedField = null
             bubble.hide()
         }
+    }
+
+    /** The text box that currently has input focus, in any window. */
+    private fun findEditableFocus(): AccessibilityNodeInfo? {
+        val fromActive = try {
+            rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        } catch (_: Exception) { null }
+        if (fromActive != null && fromActive.isEditable) return fromActive
+        return try {
+            windows.asSequence()
+                .filter { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION }
+                .mapNotNull { it.root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }
+                .firstOrNull { it.isEditable }
+        } catch (_: Exception) { null }
     }
 
     /**
@@ -142,7 +162,7 @@ class AssistantService : AccessibilityService() {
      * already in the field (or just the highlighted part).
      */
     private fun handleVoiceEdit(instruction: String) {
-        val field = focusedField ?: run {
+        val field = findEditableFocus() ?: focusedField ?: run {
             serviceScope.launch { showToast("Tap a text box first") }
             return
         }
@@ -172,7 +192,7 @@ class AssistantService : AccessibilityService() {
 
     /** Clean up spoken text with the /ramble prompt and add it to the focused field. */
     private fun handleDictation(spoken: String) {
-        val field = focusedField ?: run {
+        val field = findEditableFocus() ?: focusedField ?: run {
             serviceScope.launch { showToast("Tap a text box first") }
             return
         }
@@ -266,8 +286,9 @@ class AssistantService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
-            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            handleFocusEvent(event)
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+            event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+            refreshBubble()
             return
         }
         if (event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || isProcessing) return
