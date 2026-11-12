@@ -7,7 +7,7 @@ val baseVersion = "1.4"
 
 android {
     namespace = "com.scribe.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.scribe.app"
