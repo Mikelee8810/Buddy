@@ -51,6 +51,7 @@ import com.scribe.app.manager.KeyManager
 import com.scribe.app.model.Command
 import com.scribe.app.model.HistoryItem
 import com.scribe.app.ui.components.ScribeBrandHeader
+import com.scribe.app.ui.components.TipsCard
 import com.scribe.app.ui.components.glassCard
 import com.scribe.app.ui.theme.*
 import kotlinx.coroutines.delay
@@ -284,6 +285,9 @@ fun HubScreen(navController: NavController? = null) {
                 }
             )
 
+            Spacer(modifier = Modifier.height(14.dp))
+
+            TipsCard(prefix = currentPrefix)
             Spacer(modifier = Modifier.height(14.dp))
 
             // ── 2. Ambient Daemon Status Card (glass panel) ───────────────────
