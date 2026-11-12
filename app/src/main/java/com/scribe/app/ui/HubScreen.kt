@@ -103,6 +103,11 @@ fun HubScreen(navController: NavController? = null) {
     val keyManager = remember { KeyManager(context) }
 
     var isServiceEnabled by remember { mutableStateOf(checkServiceEnabled(context)) }
+    // Re-check whenever the user comes back (e.g. after turning Scribe on in Android settings)
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        isServiceEnabled = checkServiceEnabled(context)
+        onPauseOrDispose { }
+    }
     var keyCount by remember { mutableIntStateOf(keyManager.getKeys().size) }
     var commands by remember { mutableStateOf(commandManager.getCommands()) }
     var recentHistory by remember { mutableStateOf(historyManager.getHistory().take(3)) }
@@ -285,9 +290,6 @@ fun HubScreen(navController: NavController? = null) {
                 }
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            TipsCard(prefix = currentPrefix)
             Spacer(modifier = Modifier.height(14.dp))
 
             // ── 2. Ambient Daemon Status Card (glass panel) ───────────────────
@@ -489,10 +491,20 @@ fun HubScreen(navController: NavController? = null) {
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 100.dp)
                 ) {
+                    // Tips scroll away with the list instead of taking space from it
+                    if (searchQuery.isBlank()) {
+                        item {
+                            TipsCard(
+                                prefix = currentPrefix,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+
                     // Snippets Header
                     item {
                         Text(
-                            text = "ACTIVE SHORTCUTS (${filteredCommands.size})",
+                            text = "YOUR COMMANDS (${filteredCommands.size})",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.1.sp,
@@ -510,7 +522,7 @@ fun HubScreen(navController: NavController? = null) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if (searchQuery.isNotBlank()) "No shortcuts matching \"$searchQuery\"" else "No snippets found",
+                                    text = if (searchQuery.isNotBlank()) "Nothing matches \"$searchQuery\". Try a shorter word." else "No commands here yet. Tap New to make one.",
                                     fontSize = 13.sp,
                                     color = ScribeGlassTextTertiary
                                 )
