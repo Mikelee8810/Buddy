@@ -610,6 +610,7 @@ fun HubScreen(navController: NavController? = null) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 36.dp)
             ) {
@@ -748,6 +749,26 @@ fun HubScreen(navController: NavController? = null) {
                             contentDescription = "Delete",
                             tint = ScribeRose,
                             modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                if (cmd.isBuiltIn && commandManager.isModifiedBuiltIn(cmd.trigger)) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            commandManager.resetBuiltInCommand(cmd.trigger)
+                            commands = commandManager.getCommands()
+                            selectedCommandForDetail = null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Reset to original prompt",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ScribeTextSecondary
                         )
                     }
                 }

@@ -240,6 +240,30 @@ class CommandManager(context: Context) {
         }
     }
 
+    /** Built-in name (e.g. "fix") for a trigger, or null if it's a custom command. */
+    private fun builtInNameFor(trigger: String): String? {
+        val prefix = getTriggerPrefix()
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        return builtInDefinitions.firstOrNull { (name, _) ->
+            val current = overrides.optJSONObject(name)?.optString("trigger", "$prefix$name") ?: "$prefix$name"
+            current == trigger
+        }?.first
+    }
+
+    /** True when a built-in command's prompt or trigger was changed by the user. */
+    fun isModifiedBuiltIn(trigger: String): Boolean {
+        val name = builtInNameFor(trigger) ?: return false
+        return JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}").has(name)
+    }
+
+    /** Put one built-in command back to its original trigger and prompt. */
+    fun resetBuiltInCommand(trigger: String) {
+        val name = builtInNameFor(trigger) ?: return
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        overrides.remove(name)
+        prefs.edit().putString("builtin_overrides", overrides.toString()).apply()
+    }
+
     fun resetBuiltInCommands() {
         prefs.edit()
             .remove("builtin_overrides")
