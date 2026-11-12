@@ -91,7 +91,7 @@ object ScribeApiClient {
             val jsonBody = JSONObject().apply {
                 put("model", model)
                 put("temperature", temperature)
-                put("max_tokens", 2048)
+                put("max_tokens", 4096)
 
                 val messages = JSONArray().apply {
                     put(JSONObject().apply {
@@ -288,7 +288,7 @@ object ScribeApiClient {
                 })
                 put("generationConfig", JSONObject().apply {
                     put("temperature", temperature)
-                    put("maxOutputTokens", 2048)
+                    put("maxOutputTokens", 4096)
                 })
             }
 
