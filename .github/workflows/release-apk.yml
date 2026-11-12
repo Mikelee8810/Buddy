@@ -65,13 +65,30 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/*.apk "dist/Scribe-$(grep -oP 'baseVersion = "\K[^"]+' app/build.gradle.kts).apk"
+          VERSION="$(grep -oP 'baseVersion = "\K[^"]+' app/build.gradle.kts).${{ github.run_number }}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/release/*.apk "dist/Scribe-$VERSION.apk"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Scribe
           path: dist/*.apk
+
+      # Every update to main (or a manual run on main) publishes a release,
+      # which is what Obtainium and other updaters look for.
+      - name: Publish Release (main)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Scribe ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          generate_release_notes: true
+          files: dist/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release (on Tag)
         if: startsWith(github.ref, 'refs/tags/v')
