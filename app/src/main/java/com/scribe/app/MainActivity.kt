@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Hub      : Screen("hub",      "Hub",     Icons.Outlined.AutoAwesome)
     object History  : Screen("history",  "History", Icons.Outlined.History)
-    object Settings : Screen("settings", "Engine",  Icons.Outlined.Tune)
+    object Settings : Screen("settings", "Settings",  Icons.Outlined.Tune)
 }
 
 @Composable

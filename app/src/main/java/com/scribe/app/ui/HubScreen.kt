@@ -229,7 +229,7 @@ fun HubScreen(navController: NavController? = null) {
             // ── 1. Top Brand Header ───────────────────────────────────────────
             ScribeBrandHeader(
                 title = "Scribe",
-                subtitle = "Ambient Copilot",
+                subtitle = "Your writing helper, everywhere",
                 trailingContent = {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -322,13 +322,13 @@ fun HubScreen(navController: NavController? = null) {
                         )
                         Column {
                             Text(
-                                text = if (isServiceEnabled) "Daemon Active & Running" else "Daemon Disabled",
+                                text = if (isServiceEnabled) "Scribe is on" else "Scribe is off",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = ScribeGlassTextPrimary
                             )
                             Text(
-                                text = if (isServiceEnabled) "Ambient in all apps" else "Tap to enable in Accessibility",
+                                text = if (isServiceEnabled) "Works in every app" else "Tap to turn it on",
                                 fontSize = 11.sp,
                                 color = if (isServiceEnabled) ScribeGlassTextSecondary else ScribeGlassRose.copy(alpha = 0.85f)
                             )
@@ -807,7 +807,7 @@ fun HubScreen(navController: NavController? = null) {
                     .padding(bottom = 36.dp)
             ) {
                 Text(
-                    text = if (isCreatingNew) "New Snippet" else "Edit Snippet",
+                    text = if (isCreatingNew) "New Command" else "Edit Command",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = ScribeTextPrimary
@@ -1098,7 +1098,7 @@ fun HubScreen(navController: NavController? = null) {
                         modifier = Modifier.weight(1.5f).height(48.dp)
                     ) {
                         Text(
-                            text = if (isCreatingNew) "Create Snippet" else "Save Changes",
+                            text = if (isCreatingNew) "Create Command" else "Save Changes",
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F1535)
                         )
@@ -1122,7 +1122,7 @@ fun HubScreen(navController: NavController? = null) {
             },
             text = {
                 Text(
-                    text = "Are you sure you want to remove this snippet? This action cannot be undone.",
+                    text = "Are you sure you want to delete this command? You can't undo this.",
                     fontSize = 13.sp,
                     color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp
@@ -1165,7 +1165,7 @@ fun HubScreen(navController: NavController? = null) {
             onDismissRequest = { showResetDialog = false },
             title = {
                 Text(
-                    text = "Reset Built-in Snippets?",
+                    text = "Reset built-in commands?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = ScribeGlassTextPrimary
@@ -1173,7 +1173,7 @@ fun HubScreen(navController: NavController? = null) {
             },
             text = {
                 Text(
-                    text = "This will restore the original built-in shortcuts while keeping your custom ones intact.",
+                    text = "This will bring back the original built-in commands. Your own commands stay.",
                     fontSize = 13.sp,
                     color = ScribeGlassTextSecondary,
                     lineHeight = 18.sp

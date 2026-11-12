@@ -181,7 +181,7 @@ fun SettingsScreen(navController: NavController? = null) {
 
     fun pingProvider() {
         if (keys.isEmpty()) {
-            pingStatus = "Vault is empty"
+            pingStatus = "No API keys yet"
             return
         }
         val targetKey = keys.first()
@@ -222,15 +222,15 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Brand Header ──────────────────────────────────────────────────────
         item {
             ScribeBrandHeader(
-                title = "Engine",
-                subtitle = "Control Center & Vault"
+                title = "Settings",
+                subtitle = "Keys, AI and preferences"
             )
         }
 
         // ── Section 1: Key Vault Summary ──────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "KEY VAULT & ROTATION", icon = Icons.Outlined.Key)
+                SectionHeader(title = "API KEYS", icon = Icons.Outlined.Key)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -392,7 +392,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 2: AI Provider Selector ───────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "AI PROVIDER ENGINE", icon = Icons.Outlined.CloudQueue)
+                SectionHeader(title = "AI PROVIDER", icon = Icons.Outlined.CloudQueue)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -453,7 +453,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 3: Model Picker ───────────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "MODEL SELECTION", icon = Icons.Outlined.Psychology)
+                SectionHeader(title = "AI MODEL", icon = Icons.Outlined.Psychology)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -588,7 +588,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 4: Activation Trigger ─────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "ACTIVATION & TRIGGER", icon = Icons.Outlined.Keyboard)
+                SectionHeader(title = "TRIGGER & TIPS", icon = Icons.Outlined.Keyboard)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -919,7 +919,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 5: Tone & Temperature ─────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "INFERENCE TONE", icon = Icons.Outlined.Tune)
+                SectionHeader(title = "CREATIVITY", icon = Icons.Outlined.Tune)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -978,7 +978,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 6: Data Portability & Backup ──────────────────────────────
         item {
             Column {
-                SectionHeader(title = "DATA & BACKUP", icon = Icons.Outlined.Security)
+                SectionHeader(title = "BACKUP & RESTORE", icon = Icons.Outlined.Security)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -1065,7 +1065,7 @@ fun SettingsScreen(navController: NavController? = null) {
         // ── Section 7: About Scribe ───────────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "SYSTEM ARCHITECTURE", icon = Icons.Outlined.Shield)
+                SectionHeader(title = "ABOUT", icon = Icons.Outlined.Shield)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
@@ -1140,7 +1140,7 @@ fun SettingsScreen(navController: NavController? = null) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp)
             ) {
-                Text(text = "Vault New API Key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeGlassTextPrimary)
+                Text(text = "Add an API key", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ScribeGlassTextPrimary)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = "Encrypted on-device via Android KeyStore (AES-GCM)", fontSize = 12.sp, color = ScribeGlassTextSecondary)
 
@@ -1249,7 +1249,7 @@ fun SettingsScreen(navController: NavController? = null) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Verifying...", fontWeight = FontWeight.Bold)
                         } else {
-                            Text("Vault Key", fontWeight = FontWeight.Bold)
+                            Text("Save key", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
