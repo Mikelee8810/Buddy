@@ -19,24 +19,9 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
-    // Release signing comes from environment variables set by CI (see
-    // .github/workflows/release-apk.yml). Without them, release builds fall
-    // back to the debug key so local builds still work.
-    val releaseKeystore = System.getenv("SCRIBE_KEYSTORE_FILE")?.let { file(it) }
-    signingConfigs {
-        if (releaseKeystore != null && releaseKeystore.exists()) {
-            create("release") {
-                storeFile = releaseKeystore
-                storePassword = System.getenv("SCRIBE_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("SCRIBE_KEY_ALIAS")
-                keyPassword = System.getenv("SCRIBE_KEY_PASSWORD")
-            }
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
