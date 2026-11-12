@@ -81,7 +81,7 @@ fun TipsCard(prefix: String, modifier: Modifier = Modifier) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         "TIP ${index + 1} OF ${TIPS.size} · TAP FOR NEXT",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         color = ScribeTextTertiary

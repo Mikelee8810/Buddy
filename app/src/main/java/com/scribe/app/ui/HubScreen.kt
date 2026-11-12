@@ -241,7 +241,7 @@ fun HubScreen(navController: NavController? = null) {
                                 showResetDialog = true
                             },
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
                                 .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape)
@@ -409,7 +409,7 @@ fun HubScreen(navController: NavController? = null) {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(
                             onClick = { searchQuery = "" },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
@@ -493,7 +493,7 @@ fun HubScreen(navController: NavController? = null) {
                     item {
                         Text(
                             text = "ACTIVE SHORTCUTS (${filteredCommands.size})",
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.1.sp,
                             color = ScribeGlassTextTertiary,
@@ -551,7 +551,7 @@ fun HubScreen(navController: NavController? = null) {
                             ) {
                                 Text(
                                     text = "RECENT REWRITES",
-                                    fontSize = 10.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.1.sp,
                                     color = ScribeTextTertiary
@@ -669,7 +669,7 @@ fun HubScreen(navController: NavController? = null) {
 
                 Text(
                     text = if (cmd.isTextReplacer) "REPLACEMENT CONTENT" else "AI INSTRUCTION PROMPT",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeGlassTextTertiary
@@ -744,7 +744,7 @@ fun HubScreen(navController: NavController? = null) {
                             showDeleteConfirmDialog = cmd
                         },
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(48.dp)
                             .clip(RoundedCornerShape(14.dp))
                             .background(ScribeRose.copy(alpha = 0.1f))
                     ) {
@@ -888,7 +888,7 @@ fun HubScreen(navController: NavController? = null) {
                 // Trigger Input
                 Text(
                     text = "TRIGGER SHORTCUT",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeTextTertiary
@@ -929,7 +929,7 @@ fun HubScreen(navController: NavController? = null) {
                 // Prompt Input
                 Text(
                     text = if (editingIsReplacer) "REPLACEMENT TEXT" else "PROMPT INSTRUCTION",
-                    fontSize = 10.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                     color = ScribeTextTertiary
@@ -969,7 +969,7 @@ fun HubScreen(navController: NavController? = null) {
                 Column {
                     Text(
                         text = "DYNAMIC TOKENS",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp,
                         color = ScribeTextTertiary
@@ -1328,7 +1328,7 @@ private fun HubCommandRow(
             ) {
                 Text(
                     text = "EXPAND",
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = ScribeGlassTextTertiary
                 )
@@ -1381,7 +1381,7 @@ private fun RecentRewriteCard(
                             text = item.commandTrigger,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             color = ScribeGlassCobalt
                         )
                     }
@@ -1408,7 +1408,7 @@ private fun RecentRewriteCard(
                 onClick = onCopy,
                 modifier = Modifier
                     .padding(start = 8.dp)
-                    .size(34.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.14f))
                     .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)

@@ -79,7 +79,7 @@ fun HistoryScreen() {
                                 showClearDialog = true
                             },
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.14f))
                                 .border(1.dp, Color.White.copy(alpha = 0.30f), CircleShape)
@@ -308,7 +308,7 @@ fun HistoryScreen() {
                     // Original Input Section
                     Text(
                         text = "ORIGINAL INPUT",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp,
                         color = ScribeGlassTextTertiary
@@ -338,7 +338,7 @@ fun HistoryScreen() {
                     ) {
                         Text(
                             text = "TRANSFORMED OUTPUT",
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
                             color = ScribeGlassEmerald

@@ -1410,7 +1410,7 @@ private fun SectionHeader(title: String, icon: ImageVector) {
         Text(
             text = title,
             fontWeight = FontWeight.Bold,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             letterSpacing = 1.sp,
             color = ScribeGlassTextTertiary
         )
@@ -1578,7 +1578,7 @@ private fun UnifiedKeyRow(
                     ) {
                         Text(
                             text = providerName.uppercase(),
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = ScribeGlassCobalt
@@ -1608,21 +1608,21 @@ private fun UnifiedKeyRow(
                         clipboard.setPrimaryClip(ClipData.newPlainText("Scribe Key", keyStr))
                         Toast.makeText(context, "Key copied", Toast.LENGTH_SHORT).show()
                     },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = ScribeGlassTextTertiary, modifier = Modifier.size(15.dp))
                 }
 
                 IconButton(
                     onClick = onUsageClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Outlined.BarChart, contentDescription = "Usage", tint = ScribeGlassCobalt, modifier = Modifier.size(16.dp))
                 }
 
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ScribeGlassRose, modifier = Modifier.size(15.dp))
                 }
