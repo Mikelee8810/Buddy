@@ -105,6 +105,10 @@ fun SettingsScreen(navController: NavController? = null) {
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
 
+    // Personal style
+    var matchMyStyle by remember { mutableStateOf(prefs.getBoolean("match_my_style", true)) }
+    var aboutMe by remember { mutableStateOf(prefs.getString("about_me", "") ?: "") }
+
     // Keep-alive (Shizuku)
     var selfHealReady by remember { mutableStateOf(KeepAlive.canSelfHeal(context)) }
     var keepAliveMsg by remember { mutableStateOf<String?>(null) }
@@ -656,6 +660,71 @@ fun SettingsScreen(navController: NavController? = null) {
                                 color = ScribeEmerald
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // ── Sound Like Me ─────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "SOUND LIKE ME", icon = Icons.Outlined.Person)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Match my writing style", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Scribe learns from text you've typed before, so rewrites sound like you instead of a robot. Stays on your phone except when sent with a request.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = matchMyStyle,
+                                onCheckedChange = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    matchMyStyle = it
+                                    prefs.edit().putBoolean("match_my_style", it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text("About me", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "Optional. Your name, how you sign emails, words you love or hate.",
+                            fontSize = 12.sp,
+                            color = ScribeTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = aboutMe,
+                            onValueChange = {
+                                aboutMe = it.take(500)
+                                prefs.edit().putString("about_me", aboutMe).apply()
+                            },
+                            placeholder = { Text("e.g. I'm Mike. Sign emails \"Thanks, Mike\". Never say \"per my last email\".", color = ScribeTextTertiary) },
+                            minLines = 2,
+                            maxLines = 5,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = ScribeCobalt,
+                                unfocusedBorderColor = ScribeOutline,
+                                focusedContainerColor = ScribeSurfaceVariant,
+                                unfocusedContainerColor = ScribeSurfaceVariant,
+                                focusedTextColor = ScribeTextPrimary,
+                                unfocusedTextColor = ScribeTextPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }

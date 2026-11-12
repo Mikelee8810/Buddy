@@ -185,6 +185,30 @@ class AssistantService : AccessibilityService() {
         return out.toString().takeLast(4000).trim()
     }
 
+    /**
+     * Extra instructions that make rewrites sound like the user. Only used for
+     * commands that write new wording, not for fixes, summaries or dictation.
+     */
+    private fun personalStyleBlock(command: Command, prefs: android.content.SharedPreferences): String {
+        val name = command.trigger.removePrefix(cachedPrefix).lowercase()
+        val noStyle = setOf("fix", "ramble", "undo", "todo", "bullets", "tldr", "title", "hashtags", "explain", "emoji")
+        if (name in noStyle || name.startsWith("translate:") || command.isTextReplacer) return ""
+        val sb = StringBuilder()
+        if (prefs.getBoolean("match_my_style", true)) {
+            val samples = historyManager.getStyleSamples()
+            if (samples.size >= 2) {
+                sb.append("\n\nWrite the way this user writes. Samples of their own writing:\n")
+                samples.forEach { sb.append("- ").append(it.replace('\n', ' ')).append('\n') }
+                sb.append("Match their vocabulary, sentence length, punctuation and capitalization habits, while still following the instruction above.")
+            }
+        }
+        val aboutMe = prefs.getString("about_me", "").orEmpty().trim()
+        if (aboutMe.isNotEmpty()) {
+            sb.append("\n\nAbout the user (use only when relevant, never invent details): ").append(aboutMe.take(500))
+        }
+        return sb.toString()
+    }
+
     /** Friendly name of the app being typed in, e.g. "WhatsApp" or "Gmail". */
     private fun getAppName(node: AccessibilityNodeInfo?): String {
         val pkg = node?.packageName?.toString() ?: return ""
@@ -292,7 +316,8 @@ class AssistantService : AccessibilityService() {
         
         val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
         val screenText = if (command.prompt.contains("{screen}", ignoreCase = true)) getScreenText(source) else ""
-        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText, screenText = screenText, appName = getAppName(source))
+        val basePrompt = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText, screenText = screenText, appName = getAppName(source))
+        val promptToSend = basePrompt + personalStyleBlock(command, prefs)
 
         currentJob = serviceScope.launch {
             val originalText = text
