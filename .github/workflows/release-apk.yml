@@ -3,6 +3,7 @@ name: Build Scribe APK
 on:
   push:
     branches: [ main ]
+  pull_request:
     tags:
       - 'v*'
   workflow_dispatch:
@@ -23,11 +24,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
