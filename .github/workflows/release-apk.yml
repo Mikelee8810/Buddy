@@ -3,9 +3,9 @@ name: Build Scribe APK
 on:
   push:
     branches: [ main ]
-  pull_request:
     tags:
       - 'v*'
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -38,7 +38,8 @@ jobs:
 
       - name: Show Compile Errors
         if: failure()
-        run: grep -E "^(e|w): |error:|What went wrong" -A2 build.log | grep -v "^w: " | head -80
+        run: |
+          grep -E "^e: |error:|What went wrong" -A2 build.log | head -80
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
