@@ -585,6 +585,132 @@ fun SettingsScreen(navController: NavController? = null) {
             }
         }
 
+        // ── Voice Dictation ───────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "VOICE DICTATION", icon = Icons.Outlined.Mic)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text(
+                                    text = "Mic bubble",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = ScribeTextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tap a text box, tap the mic, and just talk. Scribe drops the ums and cleans it up.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = voiceEnabled,
+                                onCheckedChange = { on ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    if (!on) {
+                                        voiceEnabled = false
+                                        prefs.edit().putBoolean("voice_bubble_enabled", false).apply()
+                                    } else if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                        voiceEnabled = true
+                                        prefs.edit().putBoolean("voice_bubble_enabled", true).apply()
+                                    } else {
+                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = ScribeCobalt,
+                                    checkedThumbColor = Color.White
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Want a different cleanup style? Edit the ${triggerPrefix}ramble command in the Hub.",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ScribeTextTertiary
+                        )
+                    }
+                }
+            }
+        }
+
+        // ── Sound Like Me ─────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "SOUND LIKE ME", icon = Icons.Outlined.Person)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Match my writing style", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Scribe learns from text you've typed before, so rewrites sound like you instead of a robot. Stays on your phone except when sent with a request.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = matchMyStyle,
+                                onCheckedChange = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    matchMyStyle = it
+                                    prefs.edit().putBoolean("match_my_style", it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text("About me", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "Optional. Your name, how you sign emails, words you love or hate.",
+                            fontSize = 12.sp,
+                            color = ScribeTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = aboutMe,
+                            onValueChange = {
+                                aboutMe = it.take(500)
+                                prefs.edit().putString("about_me", aboutMe).apply()
+                            },
+                            placeholder = { Text("e.g. I'm Mike. Sign emails \"Thanks, Mike\". Never say \"per my last email\".", color = ScribeTextTertiary) },
+                            minLines = 2,
+                            maxLines = 5,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = ScribeCobalt,
+                                unfocusedBorderColor = ScribeOutline,
+                                focusedContainerColor = ScribeSurfaceVariant,
+                                unfocusedContainerColor = ScribeSurfaceVariant,
+                                focusedTextColor = ScribeTextPrimary,
+                                unfocusedTextColor = ScribeTextPrimary
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+
         // ── Section 4: Activation Trigger ─────────────────────────────────────
         item {
             Column {
@@ -688,112 +814,6 @@ fun SettingsScreen(navController: NavController? = null) {
             }
         }
 
-        // ── Sound Like Me ─────────────────────────────────────────────────────
-        item {
-            Column {
-                SectionHeader(title = "SOUND LIKE ME", icon = Icons.Outlined.Person)
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                Text("Match my writing style", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    "Scribe learns from text you've typed before, so rewrites sound like you instead of a robot. Stays on your phone except when sent with a request.",
-                                    fontSize = 12.sp,
-                                    color = ScribeTextSecondary
-                                )
-                            }
-                            Switch(
-                                checked = matchMyStyle,
-                                onCheckedChange = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    matchMyStyle = it
-                                    prefs.edit().putBoolean("match_my_style", it).apply()
-                                },
-                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Text("About me", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            "Optional. Your name, how you sign emails, words you love or hate.",
-                            fontSize = 12.sp,
-                            color = ScribeTextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = aboutMe,
-                            onValueChange = {
-                                aboutMe = it.take(500)
-                                prefs.edit().putString("about_me", aboutMe).apply()
-                            },
-                            placeholder = { Text("e.g. I'm Mike. Sign emails \"Thanks, Mike\". Never say \"per my last email\".", color = ScribeTextTertiary) },
-                            minLines = 2,
-                            maxLines = 5,
-                            shape = RoundedCornerShape(14.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ScribeCobalt,
-                                unfocusedBorderColor = ScribeOutline,
-                                focusedContainerColor = ScribeSurfaceVariant,
-                                unfocusedContainerColor = ScribeSurfaceVariant,
-                                focusedTextColor = ScribeTextPrimary,
-                                unfocusedTextColor = ScribeTextPrimary
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-        }
-
-        // ── Offline Backup ────────────────────────────────────────────────────
-        item {
-            Column {
-                SectionHeader(title = "OFFLINE BACKUP", icon = Icons.Outlined.CloudOff)
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                Text("Use the phone's own AI as a backup", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    "When there's no signal, no key, or your provider fails, Scribe tries Gemini Nano on your phone. Nothing leaves the device.",
-                                    fontSize = 12.sp,
-                                    color = ScribeTextSecondary
-                                )
-                            }
-                            Switch(
-                                checked = offlineFallback,
-                                onCheckedChange = {
-                                    offlineFallback = it
-                                    prefs.edit().putBoolean("offline_fallback", it).apply()
-                                    if (it) scope.launch {
-                                        com.scribe.app.api.OnDeviceAi.downloadIfNeeded()
-                                        onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel()
-                                    }
-                                },
-                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("This phone: $onDeviceStatus", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = ScribeTextTertiary)
-                    }
-                }
-            }
-        }
-
         // ── Keep Alive ────────────────────────────────────────────────────────
         item {
             Column {
@@ -855,10 +875,10 @@ fun SettingsScreen(navController: NavController? = null) {
             }
         }
 
-        // ── Voice Dictation ───────────────────────────────────────────────────
+        // ── Offline Backup ────────────────────────────────────────────────────
         item {
             Column {
-                SectionHeader(title = "VOICE DICTATION", icon = Icons.Outlined.Mic)
+                SectionHeader(title = "OFFLINE BACKUP", icon = Icons.Outlined.CloudOff)
                 Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
@@ -866,51 +886,31 @@ fun SettingsScreen(navController: NavController? = null) {
                         .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                Text(
-                                    text = "Mic bubble",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = ScribeTextPrimary
-                                )
+                                Text("Use the phone's own AI as a backup", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Tap a text box, tap the mic, and just talk. Scribe drops the ums and cleans it up.",
+                                    "When there's no signal, no key, or your provider fails, Scribe tries Gemini Nano on your phone. Nothing leaves the device.",
                                     fontSize = 12.sp,
                                     color = ScribeTextSecondary
                                 )
                             }
                             Switch(
-                                checked = voiceEnabled,
-                                onCheckedChange = { on ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    if (!on) {
-                                        voiceEnabled = false
-                                        prefs.edit().putBoolean("voice_bubble_enabled", false).apply()
-                                    } else if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                                        voiceEnabled = true
-                                        prefs.edit().putBoolean("voice_bubble_enabled", true).apply()
-                                    } else {
-                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                checked = offlineFallback,
+                                onCheckedChange = {
+                                    offlineFallback = it
+                                    prefs.edit().putBoolean("offline_fallback", it).apply()
+                                    if (it) scope.launch {
+                                        com.scribe.app.api.OnDeviceAi.downloadIfNeeded()
+                                        onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel()
                                     }
                                 },
-                                colors = SwitchDefaults.colors(
-                                    checkedTrackColor = ScribeCobalt,
-                                    checkedThumbColor = Color.White
-                                )
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
                             )
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Want a different cleanup style? Edit the ${triggerPrefix}ramble command in the Hub.",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = ScribeTextTertiary
-                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("This phone: $onDeviceStatus", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = ScribeTextTertiary)
                     }
                 }
             }
