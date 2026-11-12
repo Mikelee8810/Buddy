@@ -1250,6 +1250,8 @@ private fun HubCommandRow(
         "title" -> "Write a Title"
         "hashtags" -> "Add Hashtags"
         "explain" -> "Explain This"
+        "translate" -> "Translate"
+        "ai" -> "AI Plan Prompt"
         "ramble" -> "Clean Up Dictation"
         "undo" -> "Restore Original Text"
         else -> command.trigger.removePrefix("/")
@@ -1279,6 +1281,8 @@ private fun HubCommandRow(
             "title" -> "Catchy title or subject line"
             "hashtags" -> "3–6 fitting hashtags"
             "explain" -> "What it means, in plain words"
+            "translate" -> "Into English. Add :es, :fr, :ja… for other languages"
+            "ai" -> "Turns what you say into a step-by-step plan prompt for AI"
             "ramble" -> "Turns rambling speech into clean text"
             "undo" -> "Revert the previous text transformation"
             else -> command.prompt.take(80)
