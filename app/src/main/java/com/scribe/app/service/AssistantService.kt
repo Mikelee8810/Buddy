@@ -66,6 +66,8 @@ class AssistantService : AccessibilityService() {
     private var dismissRunnable: Runnable? = null
     private var dismissAnimator: AnimatorSet? = null
     private var enterAnimator: AnimatorSet? = null
+    private var voiceBubble: VoiceBubble? = null
+    private var focusedField: AccessibilityNodeInfo? = null
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density + 0.5f).toInt()
@@ -101,6 +103,57 @@ class AssistantService : AccessibilityService() {
         commandManager = CommandManager(applicationContext)
         historyManager = HistoryManager(applicationContext)
         updateTriggers()
+        voiceBubble = VoiceBubble(
+            this,
+            onTranscript = { spoken -> handleDictation(spoken) },
+            onError = { msg -> serviceScope.launch { showToast(msg) } }
+        )
+    }
+
+    private fun isVoiceEnabled(): Boolean {
+        val enabled = applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .getBoolean("voice_bubble_enabled", false)
+        val granted = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        return enabled && granted
+    }
+
+    private fun handleFocusEvent(event: AccessibilityEvent) {
+        val bubble = voiceBubble ?: return
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            if (!bubble.isListening) { focusedField = null; bubble.hide() }
+            return
+        }
+        val pkg = event.packageName?.toString()?.lowercase() ?: ""
+        val source = event.source
+        val usable = source != null && source.isEditable && !source.isPassword &&
+            pkg != packageName && BLOCKED_PACKAGE_PATTERNS.none { pkg.contains(it) }
+        if (usable && isVoiceEnabled()) {
+            focusedField = source
+            bubble.show()
+        } else if (!bubble.isListening) {
+            focusedField = null
+            bubble.hide()
+        }
+    }
+
+    /** Clean up spoken text with the /ramble prompt and add it to the focused field. */
+    private fun handleDictation(spoken: String) {
+        val field = focusedField ?: run {
+            serviceScope.launch { showToast("Tap a text box first") }
+            return
+        }
+        if (isProcessing) return
+        field.refresh()
+        val showingHint = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && field.isShowingHintText
+        val existing = if (showingHint) "" else field.text?.toString().orEmpty()
+        val prefix = if (existing.isBlank()) "" else existing.trimEnd() + " "
+        isProcessing = true
+        currentJob?.cancel()
+        processCommand(
+            field, spoken, commandManager.getRambleCommand(), getClipboardContent(),
+            keepPrefix = prefix, fallbackText = prefix + spoken
+        )
     }
 
     private fun updateTriggers() {
@@ -124,7 +177,13 @@ class AssistantService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || isProcessing) return
+        if (event == null) return
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED ||
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            handleFocusEvent(event)
+            return
+        }
+        if (event.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED || isProcessing) return
         val pkg = event.packageName?.toString()?.lowercase() ?: ""
         if (BLOCKED_PACKAGE_PATTERNS.any { pkg.contains(it) }) return
         val source = event.source ?: return
@@ -169,7 +228,14 @@ class AssistantService : AccessibilityService() {
         processCommand(source, cleanText, command, clip)
     }
 
-    private fun processCommand(source: AccessibilityNodeInfo, text: String, command: Command, clipboardText: String) {
+    private fun processCommand(
+        source: AccessibilityNodeInfo,
+        text: String,
+        command: Command,
+        clipboardText: String,
+        keepPrefix: String = "",
+        fallbackText: String? = null
+    ) {
         val prefs = applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val providerType = prefs.getString("provider_type", "openrouter") ?: "openrouter"
         val model: String
@@ -199,6 +265,7 @@ class AssistantService : AccessibilityService() {
 
         currentJob = serviceScope.launch {
             val originalText = text
+            val restoreText = fallbackText ?: (keepPrefix + text)
             var spinnerJob: Job? = null
             try {
                 withTimeout(90_000) {
@@ -210,7 +277,7 @@ class AssistantService : AccessibilityService() {
                         val key = keyManager.getNextKey() ?: break
 
                         if (spinnerJob == null) {
-                            spinnerJob = startInlineSpinner(source, originalText)
+                            spinnerJob = startInlineSpinner(source, keepPrefix + originalText)
                         }
 
                         // ── Pure Kotlin ScribeApiClient HTTP Call ───────────
@@ -227,7 +294,7 @@ class AssistantService : AccessibilityService() {
                             spinnerJob?.cancel(); spinnerJob = null
                             lastOriginalText = originalText
                             val generatedText = result.getOrThrow()
-                            replaceText(source, generatedText)
+                            replaceText(source, keepPrefix + generatedText)
                             historyManager.addHistoryItem(originalText, generatedText, command.trigger)
                             performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             succeeded = true
@@ -252,7 +319,7 @@ class AssistantService : AccessibilityService() {
 
                     if (!succeeded) {
                         spinnerJob?.cancel(); spinnerJob = null
-                        replaceText(source, originalText)
+                        replaceText(source, restoreText)
                         performHapticFeedback(HapticFeedbackConstants.REJECT)
                         when {
                             lastErrorMsg != null -> showToast("Scribe Error: $lastErrorMsg")
@@ -272,13 +339,13 @@ class AssistantService : AccessibilityService() {
                 }
             } catch (e: TimeoutCancellationException) {
                 spinnerJob?.cancel()
-                try { replaceText(source, originalText) } catch (_: Exception) {}
+                try { replaceText(source, restoreText) } catch (_: Exception) {}
                 showToast("Request timed out")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 spinnerJob?.cancel()
-                try { replaceText(source, originalText) } catch (_: Exception) {
+                try { replaceText(source, restoreText) } catch (_: Exception) {
                     showToast("Could not restore original text")
                 }
                 showToast("Scribe Error: ${e.message}")
@@ -485,5 +552,5 @@ class AssistantService : AccessibilityService() {
     }
 
     override fun onInterrupt() { isProcessing = false; currentJob?.cancel() }
-    override fun onDestroy() { super.onDestroy(); dismissOverlayToast(); serviceScope.cancel() }
+    override fun onDestroy() { super.onDestroy(); voiceBubble?.destroy(); dismissOverlayToast(); serviceScope.cancel() }
 }

@@ -16,6 +16,7 @@ class CommandManager(context: Context) {
     companion object {
         const val DEFAULT_PREFIX = "/"
         const val PREF_TRIGGER_PREFIX = "trigger_prefix"
+        const val RAMBLE_PROMPT = "You are cleaning up spoken dictation. Remove filler words (um, uh, like, you know), false starts, and repeated words. When the speaker corrects themselves, keep only the final intended version. Fix punctuation, capitalization, and obvious speech-to-text mistakes. Keep the speaker's own words, tone, and meaning; do not add new ideas or answer questions in the text. Keep the original language. Return only the cleaned text."
     }
 
     // Built-in command names (without prefix) and their prompts
@@ -28,6 +29,7 @@ class CommandManager(context: Context) {
         "casual" to "Rewrite in a casual, friendly tone. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the rewritten text.",
         "emoji" to "Add relevant emojis throughout. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the text with emojis added.",
         "reply" to "Generate a contextual reply to this message. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the reply.",
+        "ramble" to RAMBLE_PROMPT,
         "undo" to "Undo the last replacement and restore the original text."
     )
 
@@ -109,6 +111,14 @@ class CommandManager(context: Context) {
                     Command("$prefix$name", prompt, true)
                 }
             }
+    }
+
+    /** The command used to clean up voice dictation. Editable like any built-in. */
+    fun getRambleCommand(): Command {
+        val prefix = getTriggerPrefix()
+        val overrides = JSONObject(prefs.getString("builtin_overrides", "{}") ?: "{}")
+        val prompt = overrides.optJSONObject("ramble")?.optString("prompt", RAMBLE_PROMPT) ?: RAMBLE_PROMPT
+        return Command("${prefix}ramble", prompt, true)
     }
 
     fun getCommands(): List<Command> {

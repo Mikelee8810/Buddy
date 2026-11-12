@@ -4,6 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -98,6 +102,23 @@ fun SettingsScreen(navController: NavController? = null) {
 
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
+
+    // Voice dictation bubble
+    var voiceEnabled by remember {
+        mutableStateOf(
+            prefs.getBoolean("voice_bubble_enabled", false) &&
+                context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        voiceEnabled = granted
+        prefs.edit().putBoolean("voice_bubble_enabled", granted).apply()
+        if (!granted) {
+            Toast.makeText(context, "Scribe needs the mic to hear you. You can allow it in system settings.", Toast.LENGTH_LONG).show()
+        }
+    }
 
     // Trigger Prefix
     var triggerPrefix by remember { mutableStateOf(commandManager.getTriggerPrefix()) }
@@ -609,6 +630,67 @@ fun SettingsScreen(navController: NavController? = null) {
                                 color = ScribeEmerald
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // ── Voice Dictation ───────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "VOICE DICTATION", icon = Icons.Outlined.Mic)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text(
+                                    text = "Mic bubble",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = ScribeTextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tap a text box, tap the mic, and just talk. Scribe drops the ums and cleans it up.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = voiceEnabled,
+                                onCheckedChange = { on ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    if (!on) {
+                                        voiceEnabled = false
+                                        prefs.edit().putBoolean("voice_bubble_enabled", false).apply()
+                                    } else if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                        voiceEnabled = true
+                                        prefs.edit().putBoolean("voice_bubble_enabled", true).apply()
+                                    } else {
+                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = ScribeCobalt,
+                                    checkedThumbColor = Color.White
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Want a different cleanup style? Edit the ${triggerPrefix}ramble command in the Hub.",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ScribeTextTertiary
+                        )
                     }
                 }
             }

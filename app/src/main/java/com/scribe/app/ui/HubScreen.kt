@@ -1199,6 +1199,7 @@ private fun HubCommandRow(
         "casual" -> "Conversational & Friendly"
         "emoji" -> "Add Expressive Emojis"
         "reply" -> "Contextual Reply"
+        "ramble" -> "Clean Up Dictation"
         "undo" -> "Restore Original Text"
         else -> command.trigger.removePrefix("/")
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
@@ -1215,6 +1216,7 @@ private fun HubCommandRow(
             "casual" -> "Warm, friendly, everyday conversational tone"
             "emoji" -> "Tastefully sprinkle fitting emojis"
             "reply" -> "Draft a natural response to the message"
+            "ramble" -> "Turns rambling speech into clean text"
             "undo" -> "Revert the previous text transformation"
             else -> command.prompt.take(80)
         }
