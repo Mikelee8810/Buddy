@@ -244,7 +244,7 @@ class AssistantService : AccessibilityService() {
      */
     private fun personalStyleBlock(command: Command, prefs: android.content.SharedPreferences): String {
         val name = command.trigger.removePrefix(cachedPrefix).lowercase()
-        val noStyle = setOf("fix", "ramble", "undo", "todo", "bullets", "tldr", "title", "hashtags", "explain", "emoji")
+        val noStyle = setOf("fix", "plan", "prompt", "translate", "ramble", "undo", "todo", "bullets", "tldr", "title", "hashtags", "explain", "emoji")
         if (name in noStyle || name.startsWith("translate:") || command.isTextReplacer) return ""
         val sb = StringBuilder()
         if (prefs.getBoolean("match_my_style", true)) {
