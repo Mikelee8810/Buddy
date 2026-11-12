@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.scribe.app.api.ScribeApiClient
 import com.scribe.app.manager.CommandManager
+import com.scribe.app.keepalive.KeepAlive
+import rikka.shizuku.Shizuku
 import com.scribe.app.manager.HistoryManager
 import com.scribe.app.manager.KeyManager
 import com.scribe.app.manager.UsageManager
@@ -102,6 +104,30 @@ fun SettingsScreen(navController: NavController? = null) {
 
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
+
+    // Keep-alive (Shizuku)
+    var selfHealReady by remember { mutableStateOf(KeepAlive.canSelfHeal(context)) }
+    var keepAliveMsg by remember { mutableStateOf<String?>(null) }
+    var keepAliveBusy by remember { mutableStateOf(false) }
+    fun runKeepAliveSetup() {
+        keepAliveBusy = true
+        scope.launch {
+            val result = KeepAlive.setUpWithShizuku(context)
+            keepAliveMsg = result.fold({ it }, { it.message })
+            selfHealReady = KeepAlive.canSelfHeal(context)
+            keepAliveBusy = false
+        }
+    }
+    DisposableEffect(Unit) {
+        val listener = Shizuku.OnRequestPermissionResultListener { code, result ->
+            if (code == KeepAlive.SHIZUKU_REQUEST_CODE) {
+                if (result == PackageManager.PERMISSION_GRANTED) runKeepAliveSetup()
+                else keepAliveMsg = "Shizuku permission was denied."
+            }
+        }
+        try { Shizuku.addRequestPermissionResultListener(listener) } catch (_: Throwable) {}
+        onDispose { try { Shizuku.removeRequestPermissionResultListener(listener) } catch (_: Throwable) {} }
+    }
 
     // Voice dictation bubble
     var voiceEnabled by remember {
@@ -629,6 +655,67 @@ fun SettingsScreen(navController: NavController? = null) {
                                 fontWeight = FontWeight.Medium,
                                 color = ScribeEmerald
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Keep Alive ────────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "KEEP SCRIBE ALIVE", icon = Icons.Outlined.Bolt)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Text(
+                            text = if (selfHealReady) "Protected" else "Not protected yet",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = if (selfHealReady) ScribeEmerald else ScribeTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (selfHealReady)
+                                "If Android switches Scribe off, it turns itself back on within 15 minutes, after a restart, or when you open the app."
+                            else
+                                "Android sometimes switches Scribe off in the background. Use Shizuku once and Scribe will switch itself back on automatically.",
+                            fontSize = 12.sp,
+                            color = ScribeTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                keepAliveMsg = null
+                                when {
+                                    !KeepAlive.isShizukuRunning() ->
+                                        keepAliveMsg = "Shizuku isn't running. Install the Shizuku app, start it, then tap again."
+                                    !KeepAlive.hasShizukuPermission() -> KeepAlive.requestShizukuPermission()
+                                    else -> runKeepAliveSetup()
+                                }
+                            },
+                            enabled = !keepAliveBusy,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = ScribeCobalt, contentColor = Color.White),
+                            modifier = Modifier.fillMaxWidth().height(48.dp)
+                        ) {
+                            Text(
+                                if (keepAliveBusy) "Setting up…" else if (selfHealReady) "Run setup again" else "Set up with Shizuku",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        keepAliveMsg?.let {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(it, fontSize = 12.sp, color = ScribeTextSecondary)
+                        }
+                        if (!selfHealReady) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            WarmLinkChip("Get Shizuku", "https://shizuku.rikka.app/download/", uriHandler)
                         }
                     }
                 }
