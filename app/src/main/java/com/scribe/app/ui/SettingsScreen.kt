@@ -107,6 +107,11 @@ fun SettingsScreen(navController: NavController? = null) {
 
     var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_hidden", false)) }
 
+    // Offline backup (Gemini Nano on the phone)
+    var offlineFallback by remember { mutableStateOf(prefs.getBoolean("offline_fallback", true)) }
+    var onDeviceStatus by remember { mutableStateOf("Checking…") }
+    LaunchedEffect(Unit) { onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel() }
+
     // Personal style
     var matchMyStyle by remember { mutableStateOf(prefs.getBoolean("match_my_style", true)) }
     var aboutMe by remember { mutableStateOf(prefs.getString("about_me", "") ?: "") }
@@ -743,6 +748,47 @@ fun SettingsScreen(navController: NavController? = null) {
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                    }
+                }
+            }
+        }
+
+        // ── Offline Backup ────────────────────────────────────────────────────
+        item {
+            Column {
+                SectionHeader(title = "OFFLINE BACKUP", icon = Icons.Outlined.CloudOff)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .glassCard(cornerRadius = 20.dp, fillAlpha = 0.20f)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Use the phone's own AI as a backup", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "When there's no signal, no key, or your provider fails, Scribe tries Gemini Nano on your phone. Nothing leaves the device.",
+                                    fontSize = 12.sp,
+                                    color = ScribeTextSecondary
+                                )
+                            }
+                            Switch(
+                                checked = offlineFallback,
+                                onCheckedChange = {
+                                    offlineFallback = it
+                                    prefs.edit().putBoolean("offline_fallback", it).apply()
+                                    if (it) scope.launch {
+                                        com.scribe.app.api.OnDeviceAi.downloadIfNeeded()
+                                        onDeviceStatus = com.scribe.app.api.OnDeviceAi.statusLabel()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("This phone: $onDeviceStatus", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = ScribeTextTertiary)
                     }
                 }
             }

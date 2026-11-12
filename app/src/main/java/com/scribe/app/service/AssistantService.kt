@@ -407,6 +407,22 @@ class AssistantService : AccessibilityService() {
                         }
                     }
 
+                    // Backup: the AI built into the phone, for no signal or no key.
+                    if (!succeeded && prefs.getBoolean("offline_fallback", true)) {
+                        if (spinnerJob == null) spinnerJob = startInlineSpinner(source, keepPrefix + originalText)
+                        val local = com.scribe.app.api.OnDeviceAi.generate(promptToSend, text)
+                        if (local.isSuccess) {
+                            spinnerJob?.cancel(); spinnerJob = null
+                            lastOriginalText = originalText
+                            val generatedText = local.getOrThrow()
+                            replaceText(source, keepPrefix + generatedText + keepSuffix)
+                            historyManager.addHistoryItem(originalText, generatedText, command.trigger)
+                            performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                            showToast("Done on your phone (offline)")
+                            succeeded = true
+                        }
+                    }
+
                     if (!succeeded) {
                         spinnerJob?.cancel(); spinnerJob = null
                         replaceText(source, restoreText)
