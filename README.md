@@ -29,7 +29,6 @@ Scribe is an Android accessibility service. It watches the text box you are typi
 - **Edit by voice.** Long-press the mic and say what to change ("make this friendlier", "shorter, add a thank you"). Only the highlighted text changes if you highlight some first.
 - **Screen-aware replies.** `/reply` reads the visible conversation and the app you are in, so replies fit the chat and match the app's usual tone.
 - **Sounds like you.** Rewrites borrow from text you have typed before, plus an optional "About me" note (name, sign-off, words to avoid).
-- **Offline backup.** If the online AI fails or there is no API key, Scribe falls back to Gemini Nano on the phone where supported.
 - **Keep alive with Shizuku.** A one-time setup lets Scribe turn its own accessibility service back on if Android switches it off.
 - **12 new built-in commands**, editable prompts with a per-command reset, tips for learning the app, and a full backup that includes keys and settings.
 - **New look.** Material 3 Expressive theme, larger touch targets, plain-language labels.
@@ -43,7 +42,7 @@ Android only installs an update over an existing copy when both are signed with 
 ### Requirements
 
 - Android 8.0 (API 26) or newer
-- An API key from Google Gemini, Groq, OpenRouter, or any OpenAI-compatible provider (optional if your phone supports on-device Gemini Nano)
+- An API key from Google Gemini, Groq, OpenRouter, or any OpenAI-compatible provider
 
 ## Getting started
 
@@ -89,7 +88,7 @@ Tap **New** in the Hub. A command is either an **AI rewrite** (a prompt) or an *
 
 ## Privacy
 
-- Text is only sent when you use a command or the mic, and only to the provider you chose (or processed on the phone when using Gemini Nano).
+- Text is only sent when you use a command or the mic, and only to the provider you chose.
 - `{screen}` is only read when a prompt uses it, and password fields are always skipped.
 - Scribe does nothing in password managers, authenticator apps, or common banking and payment apps.
 - API keys are encrypted with the Android Keystore. Note that **Export** puts keys in the backup text, so keep backups private.
@@ -106,7 +105,7 @@ Tap **New** in the Hub. A command is either an **AI rewrite** (a prompt) or an *
 
 ## Tech stack
 
-Kotlin, Jetpack Compose with Material 3 Expressive, OkHttp, WorkManager, Android SpeechRecognizer, ML Kit GenAI Prompt API (Gemini Nano), and Shizuku.
+Kotlin, Jetpack Compose with Material 3 Expressive, OkHttp, WorkManager, Android SpeechRecognizer and Shizuku.
 
 ```
 app/src/main/java/com/scribe/app/
