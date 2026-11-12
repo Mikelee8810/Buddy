@@ -35,26 +35,46 @@ jobs:
       - name: Make gradlew Executable
         run: chmod +x ./gradlew
 
-      - name: Build Debug APK
+      - name: Load Signing Key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SCRIBE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/scribe.jks"
+            echo "SCRIBE_KEYSTORE_FILE=$RUNNER_TEMP/scribe.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No SCRIBE_KEYSTORE_BASE64 secret, so this APK uses a throwaway key and cannot update a previous install."
+          fi
+
+      - name: Build Release APK
+        env:
+          SCRIBE_KEYSTORE_PASSWORD: ${{ secrets.SCRIBE_KEYSTORE_PASSWORD }}
+          SCRIBE_KEY_ALIAS: ${{ secrets.SCRIBE_KEY_ALIAS }}
+          SCRIBE_KEY_PASSWORD: ${{ secrets.SCRIBE_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          ./gradlew assembleDebug 2>&1 | tee build.log
+          ./gradlew assembleRelease 2>&1 | tee build.log
 
       - name: Show Compile Errors
         if: failure()
         run: |
           grep -E "^e: |error:|What went wrong" -A2 build.log | head -80
 
-      - name: Upload Debug APK Artifact
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/*.apk "dist/Scribe-$(grep -oP 'baseVersion = "\K[^"]+' app/build.gradle.kts).apk"
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Scribe-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: Scribe
+          path: dist/*.apk
 
       - name: Create Release (on Tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/*.apk
+          files: dist/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
