@@ -13,8 +13,11 @@ android {
         applicationId = "com.scribe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "$baseVersion"
+        // CI sets GITHUB_RUN_NUMBER, so every published build gets a higher
+        // version code (required for updates) and a matching version name.
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
+        versionCode = if (run != null) 100 + run else 6
+        versionName = if (run != null) "$baseVersion.$run" else baseVersion
 
         vectorDrawables { useSupportLibrary = true }
     }
