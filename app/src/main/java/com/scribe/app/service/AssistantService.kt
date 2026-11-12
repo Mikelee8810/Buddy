@@ -185,6 +185,17 @@ class AssistantService : AccessibilityService() {
         return out.toString().takeLast(4000).trim()
     }
 
+    /** Friendly name of the app being typed in, e.g. "WhatsApp" or "Gmail". */
+    private fun getAppName(node: AccessibilityNodeInfo?): String {
+        val pkg = node?.packageName?.toString() ?: return ""
+        return try {
+            val pm = packageManager
+            pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+        } catch (_: Exception) {
+            pkg
+        }
+    }
+
     private fun getClipboardContent(): String {
         return try {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -281,7 +292,7 @@ class AssistantService : AccessibilityService() {
         
         val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
         val screenText = if (command.prompt.contains("{screen}", ignoreCase = true)) getScreenText(source) else ""
-        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText, screenText = screenText)
+        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText, screenText = screenText, appName = getAppName(source))
 
         currentJob = serviceScope.launch {
             val originalText = text
