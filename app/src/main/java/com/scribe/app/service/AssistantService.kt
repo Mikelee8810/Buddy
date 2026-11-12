@@ -429,6 +429,7 @@ class AssistantService : AccessibilityService() {
                     }
 
                     // Backup: the AI built into the phone, for no signal or no key.
+                    var localError: String? = null
                     if (!succeeded && prefs.getBoolean("offline_fallback", true)) {
                         if (spinnerJob == null) spinnerJob = startInlineSpinner(source, keepPrefix + originalText)
                         val local = com.scribe.app.api.OnDeviceAi.generate(promptToSend, text)
@@ -441,6 +442,8 @@ class AssistantService : AccessibilityService() {
                             performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             showToast("Done on your phone (offline)")
                             succeeded = true
+                        } else {
+                            localError = local.exceptionOrNull()?.message
                         }
                     }
 
@@ -449,6 +452,7 @@ class AssistantService : AccessibilityService() {
                         replaceText(source, restoreText)
                         performHapticFeedback(HapticFeedbackConstants.REJECT)
                         when {
+                            keyManager.getKeys().isEmpty() && localError != null -> showToast(localError)
                             lastErrorMsg != null -> showToast("Scribe Error: $lastErrorMsg")
                             else -> {
                                 val waitMs = keyManager.getShortestWaitTimeMs()

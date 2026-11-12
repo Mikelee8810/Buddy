@@ -41,7 +41,21 @@ object OnDeviceAi {
 
     suspend fun generate(instruction: String, text: String): Result<String> = withContext(Dispatchers.IO) {
         try {
-            if (!isAvailable()) return@withContext Result.failure(Exception("On-device AI isn't available"))
+            when (model.checkStatus()) {
+                FeatureStatus.AVAILABLE -> Unit
+                FeatureStatus.DOWNLOADABLE -> {
+                    downloadIfNeeded()
+                    if (model.checkStatus() != FeatureStatus.AVAILABLE) return@withContext Result.failure(
+                        Exception("The phone's AI is downloading. Try again in a few minutes.")
+                    )
+                }
+                FeatureStatus.DOWNLOADING -> return@withContext Result.failure(
+                    Exception("The phone's AI is still downloading. Try again in a few minutes.")
+                )
+                else -> return@withContext Result.failure(
+                    Exception("This phone doesn't support on-device AI. Add an API key in Settings.")
+                )
+            }
             val prompt = "$instruction\n\nText:\n$text"
             val out = model.generateContent(prompt).candidates.firstOrNull()?.text?.trim().orEmpty()
             if (out.isEmpty()) Result.failure(Exception("On-device AI returned nothing"))
