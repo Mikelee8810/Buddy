@@ -105,6 +105,8 @@ fun SettingsScreen(navController: NavController? = null) {
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
 
+    var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_hidden", false)) }
+
     // Personal style
     var matchMyStyle by remember { mutableStateOf(prefs.getBoolean("match_my_style", true)) }
     var aboutMe by remember { mutableStateOf(prefs.getString("about_me", "") ?: "") }
@@ -658,6 +660,22 @@ fun SettingsScreen(navController: NavController? = null) {
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = ScribeEmerald
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                Text("Show tips", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ScribeTextPrimary)
+                                Text("A quick how-to tip at the top of the Hub", fontSize = 12.sp, color = ScribeTextSecondary)
+                            }
+                            Switch(
+                                checked = showTips,
+                                onCheckedChange = {
+                                    showTips = it
+                                    prefs.edit().putBoolean("tips_hidden", !it).apply()
+                                },
+                                colors = SwitchDefaults.colors(checkedTrackColor = ScribeCobalt, checkedThumbColor = Color.White)
                             )
                         }
                     }
