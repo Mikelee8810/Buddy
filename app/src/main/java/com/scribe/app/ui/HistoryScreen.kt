@@ -70,7 +70,7 @@ fun HistoryScreen() {
             // ── Editorial Header ──────────────────────────────────────────────
             ScribeBrandHeader(
                 title = "History",
-                subtitle = if (historyItems.isNotEmpty()) "${historyItems.size} logged events" else "Audit Log",
+                subtitle = if (historyItems.isNotEmpty()) "${historyItems.size} rewrites saved" else "Your past rewrites",
                 trailingContent = {
                     if (historyItems.isNotEmpty()) {
                         IconButton(
@@ -123,14 +123,14 @@ fun HistoryScreen() {
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No history recorded yet",
+                            text = "Nothing here yet",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = ScribeGlassTextPrimary
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Transformations executed in any app\nwill be logged here automatically.",
+                            text = "Every time Scribe rewrites something,\nit shows up here so you can copy it again.",
                             fontSize = 13.sp,
                             color = ScribeGlassTextSecondary,
                             textAlign = TextAlign.Center,
@@ -289,7 +289,7 @@ fun HistoryScreen() {
                                 )
                             }
                             Text(
-                                text = "Audit Record",
+                                text = "Details",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ScribeGlassTextPrimary
@@ -305,15 +305,40 @@ fun HistoryScreen() {
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Original Input Section
-                    Text(
-                        text = "ORIGINAL INPUT",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = ScribeGlassTextTertiary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    // Original Input Section, with its own copy button so a bad
+                    // rewrite can always be undone by hand
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "WHAT YOU WROTE",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            color = ScribeGlassTextTertiary
+                        )
+                        TextButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Scribe Original", item.originalText))
+                                Toast.makeText(context, "Your original text is copied", Toast.LENGTH_SHORT).show()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = null,
+                                tint = ScribeGlassTextSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Copy", fontSize = 12.sp, color = ScribeGlassTextSecondary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -337,7 +362,7 @@ fun HistoryScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "TRANSFORMED OUTPUT",
+                            text = "SCRIBE'S VERSION",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp,
@@ -395,7 +420,7 @@ fun HistoryScreen() {
                                 historyManager.deleteItem(item.id)
                                 historyItems = historyManager.getHistory()
                                 selectedItemForDetail = null
-                                Toast.makeText(context, "Record removed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(14.dp),
@@ -410,7 +435,7 @@ fun HistoryScreen() {
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Delete Record", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Delete", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
@@ -435,7 +460,7 @@ fun HistoryScreen() {
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Copy Output", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Copy Scribe's version", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -457,7 +482,7 @@ fun HistoryScreen() {
                 },
                 text = {
                     Text(
-                        "Are you sure you want to delete all audit logs? This action cannot be undone.",
+                        "Delete every saved rewrite? You can't undo this.",
                         fontSize = 14.sp,
                         color = ScribeGlassTextSecondary
                     )
