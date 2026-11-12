@@ -79,31 +79,68 @@ fun SettingsScreen(navController: NavController? = null) {
     var selectedOpenRouterModel by remember {
         mutableStateOf(prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free")
     }
-    val openRouterModels = listOf(
+    var openRouterModels by remember { mutableStateOf(listOf(
         "google/gemma-4-31b-it:free",
         "meta-llama/llama-3.3-70b-instruct:free",
         "deepseek/deepseek-r1:free",
         "deepseek/deepseek-chat",
         "google/gemini-2.5-flash",
         "anthropic/claude-3.5-haiku"
-    )
+    )) }
 
     var selectedModel by remember {
         mutableStateOf(prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite")
     }
-    val geminiModels = listOf("gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite-preview")
+    var geminiModels by remember { mutableStateOf(listOf("gemini-2.5-flash-lite", "gemini-2.5-flash")) }
 
     var selectedGroqModel by remember {
         mutableStateOf(prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile")
     }
-    val groqModels = listOf(
-        "llama-3.3-70b-versatile",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "llama-3.1-8b-instant"
-    )
+    var groqModels by remember { mutableStateOf(listOf("llama-3.3-70b-versatile", "llama-3.1-8b-instant")) }
 
     var customEndpoint by remember { mutableStateOf(prefs.getString("custom_endpoint", "") ?: "") }
     var customModel by remember { mutableStateOf(prefs.getString("custom_model", "") ?: "") }
+
+    // Load the real model list for the chosen provider, using whichever saved key works.
+    var modelsStatus by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(providerType, keys) {
+        if (providerType == "custom") return@LaunchedEffect
+        modelsStatus = "Loading models…"
+        var loaded: List<String>? = null
+        val tryKeys = if (providerType == "openrouter") listOf(keys.firstOrNull() ?: "") else keys
+        for (k in tryKeys) {
+            val r = ScribeApiClient.listModels(providerType, k, customEndpoint)
+            if (r.isSuccess) { loaded = r.getOrNull(); break }
+        }
+        if (loaded == null) {
+            modelsStatus = if (keys.isEmpty()) "Add an API key to see this provider's models" else "Couldn't load models. Showing defaults."
+            return@LaunchedEffect
+        }
+        modelsStatus = "${loaded.size} models available"
+        when (providerType) {
+            "gemini" -> {
+                geminiModels = loaded
+                if (selectedModel !in loaded) {
+                    selectedModel = loaded.firstOrNull { it.contains("flash") } ?: loaded.first()
+                    prefs.edit().putString("model", selectedModel).apply()
+                }
+            }
+            "groq" -> {
+                groqModels = loaded
+                if (selectedGroqModel !in loaded) {
+                    selectedGroqModel = loaded.firstOrNull { it.contains("llama") } ?: loaded.first()
+                    prefs.edit().putString("groq_model", selectedGroqModel).apply()
+                }
+            }
+            "openrouter" -> {
+                openRouterModels = loaded
+                if (selectedOpenRouterModel !in loaded) {
+                    selectedOpenRouterModel = loaded.first()
+                    prefs.edit().putString("openrouter_model", selectedOpenRouterModel).apply()
+                }
+            }
+        }
+    }
 
     var showTips by remember { mutableStateOf(!prefs.getBoolean("tips_hidden", false)) }
 
@@ -458,7 +495,7 @@ fun SettingsScreen(navController: NavController? = null) {
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Includes Gemma 4, Llama 3.3, and DeepSeek R1",
+                                    text = "Models marked :free cost nothing",
                                     fontSize = 12.sp,
                                     color = ScribeTextSecondary
                                 )
@@ -472,6 +509,10 @@ fun SettingsScreen(navController: NavController? = null) {
                                         prefs.edit().putString("openrouter_model", it).apply()
                                     }
                                 )
+                                modelsStatus?.let {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(it, fontSize = 11.sp, color = ScribeTextTertiary)
+                                }
                             }
                             "gemini" -> {
                                 Text(
@@ -490,6 +531,10 @@ fun SettingsScreen(navController: NavController? = null) {
                                         prefs.edit().putString("model", it).apply()
                                     }
                                 )
+                                modelsStatus?.let {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(it, fontSize = 11.sp, color = ScribeTextTertiary)
+                                }
                             }
                             "groq" -> {
                                 Text(
@@ -508,6 +553,10 @@ fun SettingsScreen(navController: NavController? = null) {
                                         prefs.edit().putString("groq_model", it).apply()
                                     }
                                 )
+                                modelsStatus?.let {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(it, fontSize = 11.sp, color = ScribeTextTertiary)
+                                }
                             }
                             "custom" -> {
                                 Text(

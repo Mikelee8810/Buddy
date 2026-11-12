@@ -179,6 +179,60 @@ object ScribeApiClient {
         return Result.failure(Exception("That key didn't work with Gemini, Groq or OpenRouter. " + (err?.message ?: "")))
     }
 
+    /**
+     * Live list of text models the provider currently offers for this key,
+     * so the model picker never shows retired or wrong-provider models.
+     */
+    suspend fun listModels(provider: String, apiKey: String, customEndpoint: String = ""): Result<List<String>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val request = when (provider) {
+                    "gemini" -> Request.Builder()
+                        .url("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200")
+                        .header("x-goog-api-key", apiKey)
+                    "groq" -> Request.Builder()
+                        .url("https://api.groq.com/openai/v1/models")
+                        .header("Authorization", "Bearer $apiKey")
+                    "openrouter" -> Request.Builder()
+                        .url("https://openrouter.ai/api/v1/models")
+                    else -> Request.Builder()
+                        .url(customEndpoint.trimEnd('/') + "/models")
+                        .header("Authorization", "Bearer $apiKey")
+                }.get().addHeader("User-Agent", getUserAgent()).build()
+                validationClient.newCall(request).execute().use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) return@withContext Result.failure(Exception(parseErrorMessage(body, response.code)))
+                    val json = JSONObject(body)
+                    val out = mutableListOf<String>()
+                    if (provider == "gemini") {
+                        val arr = json.optJSONArray("models") ?: org.json.JSONArray()
+                        for (i in 0 until arr.length()) {
+                            val m = arr.getJSONObject(i)
+                            val methods = m.optJSONArray("supportedGenerationMethods")?.toString().orEmpty()
+                            val name = m.optString("name").removePrefix("models/")
+                            if ("generateContent" in methods && name.startsWith("gemini") &&
+                                listOf("embedding", "image", "tts", "audio", "live").none { name.contains(it) }
+                            ) out += name
+                        }
+                    } else {
+                        val arr = json.optJSONArray("data") ?: org.json.JSONArray()
+                        for (i in 0 until arr.length()) {
+                            val m = arr.getJSONObject(i)
+                            val id = m.optString("id")
+                            if (id.isBlank()) continue
+                            if (provider == "groq" && listOf("whisper", "tts", "guard", "embed").any { id.contains(it) }) continue
+                            if (m.optBoolean("active", true)) out += id
+                        }
+                        // On OpenRouter, list free models first.
+                        if (provider == "openrouter") out.sortBy { if (it.endsWith(":free")) 0 else 1 }
+                    }
+                    if (out.isEmpty()) Result.failure(Exception("No models found")) else Result.success(out)
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     // ── Google Gemini ───────────────────────────────────────────────────────────
 
     suspend fun geminiValidateKey(apiKey: String): Result<String> = withContext(Dispatchers.IO) {
