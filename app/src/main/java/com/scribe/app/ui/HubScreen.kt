@@ -140,7 +140,7 @@ fun HubScreen(navController: NavController? = null) {
                 "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
                 "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
                 "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
-                else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+                else         -> prefs.getString("model", "gemini-2.5-flash") ?: "gemini-2.5-flash"
             }
         )
     }
@@ -153,7 +153,7 @@ fun HubScreen(navController: NavController? = null) {
                 "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
                 "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
                 "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
-                else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+                else         -> prefs.getString("model", "gemini-2.5-flash") ?: "gemini-2.5-flash"
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -178,7 +178,7 @@ fun HubScreen(navController: NavController? = null) {
                     "openrouter" -> prefs.getString("openrouter_model", "google/gemma-4-31b-it:free") ?: "google/gemma-4-31b-it:free"
                     "groq"       -> prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
                     "custom"     -> prefs.getString("custom_model", "Custom Model") ?: "Custom Model"
-                    else         -> prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite"
+                    else         -> prefs.getString("model", "gemini-2.5-flash") ?: "gemini-2.5-flash"
                 }
                 delay(2000)
             }
