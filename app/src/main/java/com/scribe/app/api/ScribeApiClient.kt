@@ -142,6 +142,43 @@ object ScribeApiClient {
         }
     }
 
+    /**
+     * Figure out which provider a key belongs to by trying each one, starting
+     * with the provider the user picked. Key prefixes change over time (new
+     * Gemini keys don't always start with "AIza"), so prefixes are only hints.
+     * Returns the provider id ("gemini", "groq", "openrouter", "custom") on success.
+     */
+    suspend fun detectProvider(key: String, preferred: String, customEndpoint: String): Result<String> {
+        val order = mutableListOf<String>()
+        when {
+            key.startsWith("AIza") -> order += "gemini"
+            key.startsWith("gsk_") -> order += "groq"
+            key.startsWith("sk-or-") -> order += "openrouter"
+        }
+        order += preferred
+        order += listOf("gemini", "groq", "openrouter")
+        if (customEndpoint.isNotBlank()) order += "custom"
+        var lastError: Throwable? = null
+        var geminiError: Throwable? = null
+        for (p in order.distinct()) {
+            val r = when (p) {
+                "gemini" -> geminiValidateKey(key)
+                "groq" -> groqValidateKey(key)
+                "openrouter" -> openaiValidateKey(key, "https://openrouter.ai/api/v1")
+                "custom" -> if (customEndpoint.isNotBlank()) openaiValidateKey(key, customEndpoint) else continue
+                else -> continue
+            }
+            if (r.isSuccess) return Result.success(p)
+            lastError = r.exceptionOrNull()
+            if (p == "gemini") geminiError = lastError
+            // A network failure means we can't tell; stop instead of blaming the key.
+            if (lastError?.message?.startsWith("Network connection failed") == true) break
+        }
+        // Gemini's own message is the most useful one for most people.
+        val err = geminiError ?: lastError
+        return Result.failure(Exception("That key didn't work with Gemini, Groq or OpenRouter. " + (err?.message ?: "")))
+    }
+
     // ── Google Gemini ───────────────────────────────────────────────────────────
 
     suspend fun geminiValidateKey(apiKey: String): Result<String> = withContext(Dispatchers.IO) {

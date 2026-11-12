@@ -184,16 +184,7 @@ fun SettingsScreen(navController: NavController? = null) {
         pingStatus = null
         scope.launch {
             val startTime = System.currentTimeMillis()
-            val result = when {
-                targetKey.startsWith("AIza") -> ScribeApiClient.geminiValidateKey(targetKey)
-                targetKey.startsWith("gsk_") -> ScribeApiClient.groqValidateKey(targetKey)
-                targetKey.startsWith("sk-or-") || providerType == "openrouter" ->
-                    ScribeApiClient.openaiValidateKey(targetKey, "https://openrouter.ai/api/v1")
-                else -> {
-                    val ep = if (customEndpoint.isNotBlank()) customEndpoint else "https://api.openai.com/v1"
-                    ScribeApiClient.openaiValidateKey(targetKey, ep)
-                }
-            }
+            val result = ScribeApiClient.detectProvider(targetKey, providerType, customEndpoint)
             val elapsed = System.currentTimeMillis() - startTime
             isPinging = false
             if (result.isSuccess) {
@@ -1172,22 +1163,18 @@ fun SettingsScreen(navController: NavController? = null) {
                                         keyTestResult = "Key already exists in vault"
                                         return@launch
                                     }
-                                    val result = when {
-                                        trimmedKey.startsWith("gsk_") -> ScribeApiClient.groqValidateKey(trimmedKey)
-                                        trimmedKey.startsWith("AIza") -> ScribeApiClient.geminiValidateKey(trimmedKey)
-                                        trimmedKey.startsWith("sk-or-") || providerType == "openrouter" ->
-                                            ScribeApiClient.openaiValidateKey(trimmedKey, "https://openrouter.ai/api/v1")
-                                        else -> {
-                                            val ep = if (customEndpoint.isNotBlank()) customEndpoint else "https://api.openai.com/v1"
-                                            ScribeApiClient.openaiValidateKey(trimmedKey, ep)
-                                        }
-                                    }
+                                    val result = ScribeApiClient.detectProvider(trimmedKey, providerType, customEndpoint)
                                     isTestingKey = false
                                     if (result.isSuccess) {
+                                        val detected = result.getOrThrow()
+                                        if (detected != providerType) {
+                                            providerType = detected
+                                            prefs.edit().putString("provider_type", detected).apply()
+                                        }
                                         keyManager.addKey(trimmedKey)
                                         keys = keyManager.getKeys()
                                         newKeyText = ""
-                                        keyTestResult = "Valid key vaulted!"
+                                        keyTestResult = "Key saved"
                                         showAddKeySheet = false
                                     } else {
                                         keyTestResult = result.exceptionOrNull()?.message ?: "Validation failed"
