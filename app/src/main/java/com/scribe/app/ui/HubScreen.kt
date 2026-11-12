@@ -981,7 +981,8 @@ fun HubScreen(navController: NavController? = null) {
                             "{date}" to "Current Date",
                             "{time}" to "Current Time",
                             "{clipboard}" to "Clipboard Text",
-                            "{selection}" to "Input Text"
+                            "{selection}" to "Input Text",
+                            "{screen}" to "Screen Text"
                         )
                         tokens.forEach { (token, _) ->
                             Surface(

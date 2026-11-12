@@ -166,6 +166,25 @@ class AssistantService : AccessibilityService() {
         lastTriggerRefresh = System.currentTimeMillis()
     }
 
+    /**
+     * Visible text on screen (for example the chat you're replying to),
+     * skipping the field being edited and password fields. Capped so we
+     * don't send a huge prompt.
+     */
+    private fun getScreenText(exclude: AccessibilityNodeInfo?): String {
+        val root = try { rootInActiveWindow } catch (_: Exception) { null } ?: return ""
+        val out = StringBuilder()
+        fun walk(node: AccessibilityNodeInfo?, depth: Int) {
+            if (node == null || depth > 40 || out.length > 4000) return
+            if (node.isPassword || (exclude != null && node == exclude)) return
+            val t = node.text?.toString()?.trim()
+            if (!t.isNullOrEmpty() && !node.isEditable) out.append(t).append('\n')
+            for (i in 0 until node.childCount) walk(node.getChild(i), depth + 1)
+        }
+        walk(root, 0)
+        return out.toString().takeLast(4000).trim()
+    }
+
     private fun getClipboardContent(): String {
         return try {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -261,7 +280,8 @@ class AssistantService : AccessibilityService() {
         }
         
         val temperature = prefs.getFloat("temperature", 0.5f).toDouble()
-        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText)
+        val screenText = if (command.prompt.contains("{screen}", ignoreCase = true)) getScreenText(source) else ""
+        val promptToSend = commandManager.resolveVariables(command.prompt, selection = text, clipboardText = clipboardText, screenText = screenText)
 
         currentJob = serviceScope.launch {
             val originalText = text

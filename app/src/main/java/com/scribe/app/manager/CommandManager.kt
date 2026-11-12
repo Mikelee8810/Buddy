@@ -28,7 +28,7 @@ class CommandManager(context: Context) {
         "formal" to "Rewrite in a formal, professional tone. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the rewritten text.",
         "casual" to "Rewrite in a casual, friendly tone. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the rewritten text.",
         "emoji" to "Add relevant emojis throughout. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the text with emojis added.",
-        "reply" to "Generate a contextual reply to this message. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the reply.",
+        "reply" to "Here is what is currently visible on the screen, which may include the conversation being replied to:\n---\n{screen}\n---\nThe user has typed a rough idea of their reply. Write the reply they want to send, fitting the conversation above. If they typed nothing useful, write a natural reply to the latest message. CRITICAL: You MUST preserve the exact original language, alphabet, and script. For example, if the input is in Hinglish (Hindi written in Latin alphabet), you MUST output in Hinglish. Do NOT translate to Devanagari or any other script. Do not change the original language. Return only the reply.",
         "simplify" to "Rewrite in plain, simple English that a 12-year-old could follow. Use short sentences and everyday words. Keep every important point. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
         "bullets" to "Turn this into a clean bulleted list. One idea per bullet, short and scannable. Keep all the key information. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
         "tldr" to "Summarize this in one or two sentences that capture the main point. CRITICAL: Keep the original language and script. Return only the result, with no explanations.",
@@ -326,7 +326,7 @@ class CommandManager(context: Context) {
     /**
      * Resolves dynamic template variables such as {date}, {time}, {clipboard}, {selection}, {input}
      */
-    fun resolveVariables(template: String, selection: String = "", clipboardText: String = ""): String {
+    fun resolveVariables(template: String, selection: String = "", clipboardText: String = "", screenText: String = ""): String {
         val now = Date()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -340,5 +340,6 @@ class CommandManager(context: Context) {
             .replace("{clipboard}", clipboardText, ignoreCase = true)
             .replace("{selection}", selection, ignoreCase = true)
             .replace("{input}", selection, ignoreCase = true)
+            .replace("{screen}", screenText, ignoreCase = true)
     }
 }
