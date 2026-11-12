@@ -365,7 +365,7 @@ class AssistantService : AccessibilityService() {
             model = prefs.getString("groq_model", "llama-3.3-70b-versatile") ?: "llama-3.3-70b-versatile"
             endpoint = ""
         } else {
-            model = prefs.getString("model", "gemini-3.1-flash-lite-preview") ?: "gemini-3.1-flash-lite-preview"
+            model = prefs.getString("model", "gemini-2.5-flash") ?: "gemini-2.5-flash"
             endpoint = ""
         }
         

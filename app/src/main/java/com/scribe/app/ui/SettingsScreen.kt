@@ -89,7 +89,7 @@ fun SettingsScreen(navController: NavController? = null) {
     )) }
 
     var selectedModel by remember {
-        mutableStateOf(prefs.getString("model", "gemini-2.5-flash-lite") ?: "gemini-2.5-flash-lite")
+        mutableStateOf(prefs.getString("model", "gemini-2.5-flash") ?: "gemini-2.5-flash")
     }
     var geminiModels by remember { mutableStateOf(listOf("gemini-2.5-flash-lite", "gemini-2.5-flash")) }
 
