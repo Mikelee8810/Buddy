@@ -12,6 +12,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.WindowManager
 import android.widget.TextView
 
@@ -38,6 +39,10 @@ class VoiceBubble(
     var isListening = false
         private set
     private var editMode = false
+    private var dragged = false
+    private var downRawY = 0f
+    private var startY = 0
+    private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density + 0.5f).toInt()
@@ -48,10 +53,10 @@ class VoiceBubble(
             text = "🎙"
             textSize = 20f
             gravity = Gravity.CENTER
-            contentDescription = "Scribe voice input"
+            contentDescription = "Scribe voice input. Tap to dictate, long-press to edit by voice, drag to move."
             setOnClickListener { editMode = false; toggle() }
             setOnLongClickListener {
-                if (!isListening) { editMode = true; start() }
+                if (!isListening && !dragged) { editMode = true; start() }
                 true
             }
         }
@@ -64,8 +69,28 @@ class VoiceBubble(
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            gravity = Gravity.END or Gravity.TOP
             x = dp(8)
+            y = prefs.getInt("bubble_y", context.resources.displayMetrics.heightPixels / 2)
+        }
+        // Drag up and down to move it out of the way; the spot is remembered.
+        bubble.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> { downRawY = e.rawY; startY = params.y; dragged = false }
+                MotionEvent.ACTION_MOVE -> {
+                    val dy = (e.rawY - downRawY).toInt()
+                    if (kotlin.math.abs(dy) > dp(8)) dragged = true
+                    if (dragged) {
+                        params.y = (startY + dy).coerceIn(0, context.resources.displayMetrics.heightPixels - dp(48))
+                        try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
+                    }
+                }
+                MotionEvent.ACTION_UP -> if (dragged) {
+                    prefs.edit().putInt("bubble_y", params.y).apply()
+                    return@setOnTouchListener true
+                }
+            }
+            dragged
         }
         try {
             wm.addView(bubble, params)
